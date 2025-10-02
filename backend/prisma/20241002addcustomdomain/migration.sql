@@ -1,1 +1,0 @@
-ALTER TABLE "Tenant" ADD COLUMN "customDomain" TEXT UNIQUE;
