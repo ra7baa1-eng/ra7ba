@@ -11,10 +11,16 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // Only enable rewrites if API URL is properly configured
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl || apiUrl === 'undefined') {
+      return [];
+    }
+    
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        destination: `${apiUrl}/:path*`,
       },
     ];
   },
