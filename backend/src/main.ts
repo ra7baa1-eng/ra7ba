@@ -10,34 +10,9 @@ async function bootstrap() {
   // Security
   app.use(helmet() as any);
 
-  // CORS - Allow subdomains and Render
+  // CORS - Allow all origins for now (temporary fix)
   app.enableCors({
-    origin: (origin, callback) => {
-      // Development and Render origins
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'https://ra7ba-frontend.onrender.com',
-        'https://ra7ba-1.onrender.com',
-        'https://ra7ba-backend.onrender.com',
-        ...(process.env.CORS_ORIGINS?.split(',') || [])
-      ];
-      
-      const isAllowed = !origin || allowedOrigins.some((allowed) => {
-        if (allowed.includes('*')) {
-          const regex = new RegExp(allowed.replace('*', '.*'));
-          return regex.test(origin);
-        }
-        return allowed === origin;
-      });
-      
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.log(`CORS blocked origin: ${origin}`);
-        callback(null, false);
-      }
-    },
+    origin: true, // Allow all origins temporarily
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
