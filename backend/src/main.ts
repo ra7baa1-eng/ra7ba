@@ -18,6 +18,7 @@ async function bootstrap() {
         'http://localhost:3000',
         'http://localhost:3001',
         'https://ra7ba-frontend.onrender.com',
+        'https://ra7ba-1.onrender.com',
         'https://ra7ba-backend.onrender.com',
         ...(process.env.CORS_ORIGINS?.split(',') || [])
       ];
