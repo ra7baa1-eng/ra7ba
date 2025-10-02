@@ -1,0 +1,122 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as fs from 'fs';
+import * as path from 'path';
+
+@Injectable()
+export class StorageService {
+  private supabase: SupabaseClient | null = null;
+  private useLocal: boolean = false;
+  private localStoragePath: string;
+
+  constructor(private config: ConfigService) {
+    const supabaseUrl = this.config.get('SUPABASE_URL');
+    const supabaseKey = this.config.get('SUPABASE_KEY');
+
+    if (supabaseUrl && supabaseKey) {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+    } else {
+      this.useLocal = true;
+      this.localStoragePath = path.join(process.cwd(), 'uploads');
+      
+      // Create uploads directory if it doesn't exist
+      if (!fs.existsSync(this.localStoragePath)) {
+        fs.mkdirSync(this.localStoragePath, { recursive: true });
+      }
+    }
+  }
+
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'general',
+  ): Promise<string> {
+    if (this.useLocal) {
+      return this.uploadLocal(file, folder);
+    }
+    return this.uploadToSupabase(file, folder);
+  }
+
+  private async uploadToSupabase(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<string> {
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const bucket = this.config.get('SUPABASE_BUCKET', 'rahba-storage');
+    const fileName = `${folder}/${Date.now()}-${file.originalname}`;
+
+    const { data, error } = await this.supabase.storage
+      .from(bucket)
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+
+    const { data: publicData } = this.supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicData.publicUrl;
+  }
+
+  private async uploadLocal(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<string> {
+    const folderPath = path.join(this.localStoragePath, folder);
+    
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const filePath = path.join(folderPath, fileName);
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Return URL path (will be served by express.static)
+    return `/uploads/${folder}/${fileName}`;
+  }
+
+  async deleteFile(fileUrl: string): Promise<void> {
+    if (this.useLocal) {
+      return this.deleteLocal(fileUrl);
+    }
+    return this.deleteFromSupabase(fileUrl);
+  }
+
+  private async deleteFromSupabase(fileUrl: string): Promise<void> {
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const bucket = this.config.get('SUPABASE_BUCKET', 'rahba-storage');
+    
+    // Extract file path from URL
+    const urlParts = fileUrl.split('/');
+    const fileName = urlParts.slice(-2).join('/'); // folder/filename
+
+    const { error } = await this.supabase.storage
+      .from(bucket)
+      .remove([fileName]);
+
+    if (error) {
+      console.error('Delete failed:', error);
+    }
+  }
+
+  private async deleteLocal(fileUrl: string): Promise<void> {
+    const filePath = path.join(process.cwd(), fileUrl);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  }
+}
