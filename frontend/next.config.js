@@ -19,10 +19,12 @@ const nextConfig = {
         apiUrl === 'undefined' || 
         apiUrl === 'null' ||
         apiUrl.trim() === '' ||
+        apiUrl === 'https://your-backend-url.onrender.com/api' ||
         apiUrl.includes('your-backend-url')) {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not configured properly, skipping API rewrites');
-      console.warn('Current value:', apiUrl);
-      console.warn('Please set NEXT_PUBLIC_API_URL in Render Environment Variables');
+      console.warn('⚠️ Current value:', apiUrl);
+      console.warn('⚠️ Please set NEXT_PUBLIC_API_URL in Render Environment Variables');
+      console.warn('⚠️ Example: https://your-backend.onrender.com/api');
       return [];
     }
     
