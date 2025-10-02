@@ -28,7 +28,18 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const { data } = await authApi.register(formData);
+      // Map frontend data to backend expected format
+      const registerData = {
+        email: formData.email,
+        password: formData.password,
+        storeName: formData.storeNameAr, // Arabic name as main store name
+        storeNameEn: formData.storeName, // English name as storeNameEn
+        subdomain: formData.subdomain,
+        ownerName: formData.name,
+        phone: formData.phone
+      };
+      
+      const { data } = await authApi.register(registerData);
       
       // Save tokens
       localStorage.setItem('accessToken', data.accessToken);
