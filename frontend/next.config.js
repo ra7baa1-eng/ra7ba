@@ -13,10 +13,20 @@ const nextConfig = {
   async rewrites() {
     // Only enable rewrites if API URL is properly configured
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl || apiUrl === 'undefined') {
+    
+    // Check if API URL is valid and not undefined/empty
+    if (!apiUrl || 
+        apiUrl === 'undefined' || 
+        apiUrl === 'null' ||
+        apiUrl.trim() === '' ||
+        apiUrl.includes('your-backend-url')) {
+      console.warn('⚠️ NEXT_PUBLIC_API_URL not configured properly, skipping API rewrites');
+      console.warn('Current value:', apiUrl);
+      console.warn('Please set NEXT_PUBLIC_API_URL in Render Environment Variables');
       return [];
     }
     
+    console.log('✅ API rewrites enabled for:', apiUrl);
     return [
       {
         source: '/api/:path*',
