@@ -32,11 +32,11 @@ export default function RegisterPage() {
       const registerData = {
         email: formData.email,
         password: formData.password,
-        storeName: formData.storeNameAr, // Arabic name as main store name
-        storeNameEn: formData.storeName, // English name as storeNameEn
-        subdomain: formData.subdomain,
-        ownerName: formData.name,
-        phone: formData.phone
+        name: formData.name,                    // Owner name
+        phone: formData.phone,
+        storeName: formData.storeName,          // English store name
+        storeNameAr: formData.storeNameAr,      // Arabic store name
+        subdomain: formData.subdomain
       };
       
       const { data } = await authApi.register(registerData);
