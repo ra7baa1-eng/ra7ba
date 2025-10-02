@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Multer } from 'multer';
 
 @Injectable()
 export class StorageService {
@@ -28,7 +29,7 @@ export class StorageService {
   }
 
   async uploadFile(
-    file: Express.Multer.File,
+    file: any,
     folder: string = 'general',
   ): Promise<string> {
     if (this.useLocal) {
@@ -38,7 +39,7 @@ export class StorageService {
   }
 
   private async uploadToSupabase(
-    file: Express.Multer.File,
+    file: any,
     folder: string,
   ): Promise<string> {
     if (!this.supabase) {
@@ -67,7 +68,7 @@ export class StorageService {
   }
 
   private async uploadLocal(
-    file: Express.Multer.File,
+    file: any,
     folder: string,
   ): Promise<string> {
     const folderPath = path.join(this.localStoragePath, folder);
