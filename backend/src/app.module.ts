@@ -14,8 +14,10 @@ import { StorageModule } from './modules/storage/storage.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { CronModule } from './modules/cron/cron.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     // Configuration
     ConfigModule.forRoot({
