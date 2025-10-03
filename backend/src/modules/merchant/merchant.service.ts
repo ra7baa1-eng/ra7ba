@@ -94,7 +94,7 @@ export class MerchantService {
       name?: string;
       nameAr?: string;
       description?: string;
-      descriptionAr?: string;
+      // descriptionAr?: string; // Temporarily disabled
       logo?: string;
       banner?: string;
       theme?: any;

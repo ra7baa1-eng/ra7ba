@@ -15,7 +15,7 @@ export class TenantService {
         name: true,
         nameAr: true,
         description: true,
-        descriptionAr: true,
+        // descriptionAr: true, // Temporarily disabled
         logo: true,
         banner: true,
         theme: true,
