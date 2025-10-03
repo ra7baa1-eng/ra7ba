@@ -106,6 +106,7 @@ model Tenant {
   name        String
   nameAr      String
   description String?
+  descriptionAr String?
   logo        String?
   banner      String?
   theme       Json?         // Store theme customization
