@@ -67,6 +67,15 @@ export const authApi = {
   
   logout: (refreshToken: string) =>
     api.post('/auth/logout', { refreshToken }),
+  
+  refreshToken: (refreshToken: string) =>
+    api.post('/auth/refresh', { refreshToken }),
+  
+  validateToken: () =>
+    api.get('/auth/validate'),
+  
+  getProfile: () =>
+    api.get('/auth/profile'),
 };
 
 // Admin API

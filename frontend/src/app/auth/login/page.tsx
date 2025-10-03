@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -20,21 +19,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const { data } = await authApi.login(formData.email, formData.password);
-      
-      // Save tokens
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // Redirect based on role
-      if (data.user.role === 'SUPER_ADMIN') {
-        router.push('/admin/dashboard');
-      } else if (data.user.role === 'MERCHANT') {
-        router.push('/merchant/dashboard');
-      } else {
-        router.push('/');
-      }
+      await login(formData.email, formData.password);
     } catch (err: any) {
       setError(err.response?.data?.message || 'فشل تسجيل الدخول');
     } finally {

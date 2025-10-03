@@ -1,19 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { merchantApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 
 export default function MerchantDashboard() {
-  const router = useRouter();
+  const { user, logout, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<any>(null);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (!authLoading && user) {
+      loadDashboard();
+    }
+  }, [authLoading, user]);
 
   const loadDashboard = async () => {
     try {
@@ -21,15 +23,14 @@ export default function MerchantDashboard() {
       setDashboard(data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      router.push('/auth/login');
+      // Don't redirect immediately - let AuthContext handle it
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    router.push('/auth/login');
+    logout();
   };
 
   if (loading) {
