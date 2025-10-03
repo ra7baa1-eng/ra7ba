@@ -88,7 +88,8 @@ export class OrderService {
         postalCode: data.postalCode,
         customerNotes: data.customerNotes,
         subtotal,
-        deliveryFee,
+        shippingCost: deliveryFee,  // Map deliveryFee to shippingCost for current DB
+        deliveryFee,  // Keep for future use
         total,
         status: OrderStatus.PENDING,
         items: {

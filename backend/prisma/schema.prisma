@@ -269,7 +269,8 @@ model Order {
   status      OrderStatus  @default(PENDING)
   
   subtotal    Decimal      @db.Decimal(10, 2)
-  deliveryFee Decimal      @db.Decimal(10, 2)
+  shippingCost Decimal     @db.Decimal(10, 2)  // Using shippingCost to match current DB
+  deliveryFee Decimal      @db.Decimal(10, 2)  // New field for future use
   total       Decimal      @db.Decimal(10, 2)
   
   // Delivery info
