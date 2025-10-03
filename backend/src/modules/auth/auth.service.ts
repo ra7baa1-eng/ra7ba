@@ -3,12 +3,13 @@ import {
   UnauthorizedException,
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -28,89 +29,126 @@ export class AuthService {
     storeNameAr: string;
     subdomain: string;
   }) {
-    // Check if email exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    try {
+      // Basic validation before DB work
+      if (!dto.email || !dto.password || !dto.name || !dto.phone || !dto.storeName || !dto.storeNameAr || !dto.subdomain) {
+        throw new BadRequestException('Missing required fields');
+      }
 
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    // Check if subdomain exists
-    const existingTenant = await this.prisma.tenant.findUnique({
-      where: { subdomain: dto.subdomain },
-    });
-
-    if (existingTenant) {
-      throw new ConflictException('Subdomain already taken');
-    }
-
-    // Validate subdomain format (alphanumeric, lowercase, hyphens only)
-    if (!/^[a-z0-9-]+$/.test(dto.subdomain)) {
-      throw new BadRequestException('Invalid subdomain format');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    // Create user and tenant in transaction
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          name: dto.name,
-          phone: dto.phone,
-          role: UserRole.MERCHANT,
-        },
+      // Check if email exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
       });
 
-      // Create tenant with 7-day trial
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+      if (existingUser) {
+        throw new ConflictException('Email already exists');
+      }
 
-      const tenant = await tx.tenant.create({
-        data: {
-          subdomain: dto.subdomain,
-          name: dto.storeName,
-          nameAr: dto.storeNameAr,
-          ownerId: user.id,
-          status: 'TRIAL',
-          trialEndsAt,
-        },
+      // Check if subdomain exists
+      const existingTenant = await this.prisma.tenant.findUnique({
+        where: { subdomain: dto.subdomain },
       });
 
-      // Create trial subscription
-      await tx.subscription.create({
-        data: {
-          tenantId: tenant.id,
-          status: 'TRIAL',
-          plan: 'STANDARD',
-        },
+      if (existingTenant) {
+        throw new ConflictException('Subdomain already taken');
+      }
+
+      // Validate subdomain format (alphanumeric, lowercase, hyphens only)
+      if (!/^[a-z0-9-]+$/.test(dto.subdomain)) {
+        throw new BadRequestException('Invalid subdomain format');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      // Create user and tenant in transaction
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Create user
+        const user = await tx.user.create({
+          data: {
+            email: dto.email,
+            password: hashedPassword,
+            name: dto.name,
+            phone: dto.phone,
+            role: UserRole.MERCHANT,
+          },
+        });
+
+        // Create tenant with 7-day trial
+        const trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+
+        const tenant = await tx.tenant.create({
+          data: {
+            subdomain: dto.subdomain,
+            name: dto.storeName,
+            nameAr: dto.storeNameAr,
+            ownerId: user.id,
+            status: 'TRIAL',
+            trialEndsAt,
+          },
+        });
+
+        // Create trial subscription
+        await tx.subscription.create({
+          data: {
+            tenantId: tenant.id,
+            status: 'TRIAL',
+            plan: 'STANDARD',
+          },
+        });
+
+        return { user, tenant };
       });
 
-      return { user, tenant };
-    });
+      // Generate tokens
+      const tokens = await this.generateTokens(result.user.id, result.user.role);
 
-    // Generate tokens
-    const tokens = await this.generateTokens(result.user.id, result.user.role);
+      return {
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name,
+          role: result.user.role,
+        },
+        tenant: {
+          id: result.tenant.id,
+          subdomain: result.tenant.subdomain,
+          name: result.tenant.name,
+        },
+        ...tokens,
+      };
+    } catch (err: any) {
+      // Add strong logging to pinpoint root cause on Render
+      // eslint-disable-next-line no-console
+      console.error('RegisterMerchant failed:', {
+        message: err?.message,
+        code: err?.code,
+        meta: err?.meta,
+      });
 
-    return {
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        role: result.user.role,
-      },
-      tenant: {
-        id: result.tenant.id,
-        subdomain: result.tenant.subdomain,
-        name: result.tenant.name,
-      },
-      ...tokens,
-    };
+      // Map common Prisma errors to user-friendly HTTP errors
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2002') {
+          // Unique constraint failed
+          const target = (err.meta && (err.meta as any).target) || [];
+          if (Array.isArray(target) && target.includes('email')) {
+            throw new ConflictException('Email already exists');
+          }
+          if (Array.isArray(target) && target.includes('subdomain')) {
+            throw new ConflictException('Subdomain already taken');
+          }
+          throw new ConflictException('Duplicate value');
+        }
+        if (err.code === 'P2003') {
+          // Foreign key constraint failed
+          throw new BadRequestException('Invalid reference data');
+        }
+      }
+
+      // Fallback
+      throw new InternalServerErrorException('Registration failed');
+    }
   }
 
   // Login
