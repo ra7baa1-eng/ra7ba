@@ -8,7 +8,10 @@ export class AdminService {
 
   // Get all tenants with pagination
   async getAllTenants(page = 1, limit = 10, status?: TenantStatus) {
-    const skip = (page - 1) * limit;
+    // Ensure page and limit are valid numbers
+    const validPage = Math.max(1, parseInt(String(page)) || 1);
+    const validLimit = Math.max(1, Math.min(100, parseInt(String(limit)) || 10));
+    const skip = (validPage - 1) * validLimit;
     
     const where = status ? { status } : {};
     
@@ -39,7 +42,7 @@ export class AdminService {
           },
         },
         skip,
-        take: limit,
+        take: validLimit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.tenant.count({ where }),
@@ -49,9 +52,9 @@ export class AdminService {
       data: tenants,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(total / validLimit),
       },
     };
   }
