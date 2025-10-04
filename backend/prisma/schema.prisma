@@ -244,6 +244,7 @@ model Product {
   // Variants relations
   options     ProductOption[]
   variants    ProductVariant[]
+  bundleOffers BundleOffer[]
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
