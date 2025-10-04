@@ -267,6 +267,22 @@ export class AdminService {
     // Ensure pgcrypto extension for gen_random_uuid()
     await this.prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
 
+    // Detect Product.id column type to align FKs (uuid or text)
+    const prodTypeRow: any = await this.prisma.$queryRawUnsafe(
+      `SELECT format_type(a.atttypid, a.atttypmod) AS col_type
+       FROM pg_attribute a
+       JOIN pg_class c ON a.attrelid = c.oid
+       JOIN pg_namespace n ON c.relnamespace = n.oid
+       WHERE n.nspname = 'public' AND c.relname = 'Product' AND a.attname = 'id' AND a.attnum > 0 AND NOT a.attisdropped
+       LIMIT 1;`
+    );
+    let productIdType = 'TEXT';
+    if (Array.isArray(prodTypeRow) && prodTypeRow[0] && prodTypeRow[0].col_type) {
+      const t = String(prodTypeRow[0].col_type).toLowerCase();
+      if (t.includes('uuid')) productIdType = 'UUID';
+      else if (t.includes('character varying') || t.includes('varchar') || t.includes('text')) productIdType = 'TEXT';
+    }
+
     const sql = `
 DO $$
 BEGIN
@@ -286,7 +302,7 @@ BEGIN
     ) THEN
         CREATE TABLE "ProductOption" (
             id TEXT PRIMARY KEY,
-            "productId" TEXT NOT NULL,
+            "productId" ${productIdType} NOT NULL,
             name TEXT NOT NULL,
             position INT NOT NULL DEFAULT 0,
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -318,7 +334,7 @@ BEGIN
     ) THEN
         CREATE TABLE "ProductVariant" (
             id TEXT PRIMARY KEY,
-            "productId" TEXT NOT NULL,
+            "productId" ${productIdType} NOT NULL,
             sku TEXT,
             barcode TEXT,
             price DECIMAL(10,2),
@@ -338,7 +354,7 @@ BEGIN
     ) THEN
         CREATE TABLE "BundleOffer" (
             id TEXT PRIMARY KEY,
-            "productId" TEXT NOT NULL,
+            "productId" ${productIdType} NOT NULL,
             "minQuantity" INT NOT NULL,
             "bundlePrice" DECIMAL(10,2) NOT NULL,
             "isActive" BOOLEAN NOT NULL DEFAULT TRUE,

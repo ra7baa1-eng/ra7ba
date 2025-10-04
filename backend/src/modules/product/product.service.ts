@@ -17,11 +17,18 @@ export class ProductService {
       throw new ForbiddenException(limits.reason);
     }
 
+    // Auto-fill English name from Arabic if not provided
+    if (!data.name && data.nameAr) {
+      data.name = data.nameAr;
+    }
+
+    const baseName = data.nameAr || data.name;
+
     const product = await this.prisma.product.create({
       data: {
         ...data,
         tenantId,
-        slug: this.generateSlug(data.name),
+        slug: this.generateSlug(baseName || data.name),
       },
     });
 
@@ -79,8 +86,14 @@ export class ProductService {
   async update(id: string, tenantId: string, data: any) {
     const product = await this.findOne(id, tenantId);
 
-    if (data.name && data.name !== product.name) {
-      data.slug = this.generateSlug(data.name);
+    // Auto-fill name from Arabic if missing
+    if (!data.name && data.nameAr) {
+      data.name = data.nameAr;
+    }
+
+    const baseName = data.name ?? data.nameAr;
+    if (baseName && baseName !== product.name && baseName !== product.nameAr) {
+      data.slug = this.generateSlug(baseName);
     }
 
     return this.prisma.product.update({
@@ -158,11 +171,16 @@ export class ProductService {
 
   // Helper: Generate slug
   private generateSlug(name: string): string {
-    return name
+    const safe = name
       .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      // Allow Arabic letters and English letters/digits, spaces and hyphens
+      .replace(/[^a-z0-9\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim() + '-' + Math.random().toString(36).substring(7);
+      .replace(/^-+|-+$/g, '');
+
+    const rand = Math.random().toString(36).substring(2, 7);
+    return `${safe}-${rand}`;
   }
 }
