@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { productsApi } from '@/lib/api';
+import { productsApi, ordersApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import LocationSelector from '@/components/LocationSelector';
 
 export default function StorePage() {
   const params = useParams();
@@ -265,6 +266,9 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
     customerPhone: '',
     wilaya: '',
     commune: '',
+    wilayaId: 0,
+    communeId: 0,
+    postalCode: '',
     shippingAddress: '',
     notes: '',
   });
@@ -325,34 +329,18 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">الولاية *</label>
-              <select
-                required
-                value={formData.wilaya}
-                onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">اختر الولاية</option>
-                <option value="الجزائر">الجزائر</option>
-                <option value="وهران">وهران</option>
-                <option value="قسنطينة">قسنطينة</option>
-                <option value="عنابة">عنابة</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2">البلدية *</label>
-              <input
-                type="text"
-                required
-                value={formData.commune}
-                onChange={(e) => setFormData({ ...formData, commune: e.target.value })}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="البلدية"
-              />
-            </div>
-          </div>
+          <LocationSelector
+            selectedWilaya={formData.wilayaId}
+            selectedCommune={formData.communeId}
+            onWilayaChange={(id, name) => setFormData({ ...formData, wilayaId: id, wilaya: name })}
+            onCommuneChange={(id, name, postalCode) => setFormData({ 
+              ...formData, 
+              communeId: id, 
+              commune: name, 
+              postalCode 
+            })}
+            required
+          />
 
           <div>
             <label className="block text-sm font-semibold mb-2">العنوان الكامل *</label>
