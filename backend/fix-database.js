@@ -161,7 +161,7 @@ END $$;
     
     // Test the fix by running a simple query
     const orderCount = await prisma.order.count();
-    console.log(\`✅ Database is working correctly. Total orders: \${orderCount}\`);
+    console.log('✅ Database is working correctly. Total orders: ' + orderCount);
     
   } catch (error) {
     console.error('❌ Error fixing database:', error);

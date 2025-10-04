@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { subscriptionApi } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { uploadImageToImgBB } from '@/lib/upload';
 
 export default function MerchantSubscription() {
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,7 @@ export default function MerchantSubscription() {
   const [paymentData, setPaymentData] = useState({
     baridimobRef: '',
     paymentProof: '',
+    proofFile: null as File | null,
   });
 
   useEffect(() => {
@@ -35,18 +37,52 @@ export default function MerchantSubscription() {
     }
   };
 
+  // Image upload handled via shared utility (ImgBB)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type and size
+      if (!file.type.startsWith('image/')) {
+        alert('يرجى اختيار ملف صورة صحيح');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+        return;
+      }
+      setPaymentData({ ...paymentData, proofFile: file });
+    }
+  };
+
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate BaridiMob reference (should be 20 digits)
+    if (!/^\d{20}$/.test(paymentData.baridimobRef)) {
+      alert('رقم عملية BaridiMob يجب أن يكون 20 رقم بالضبط');
+      return;
+    }
+    
     try {
+      let proofUrl = paymentData.paymentProof;
+      
+      // Upload image if file is selected
+      if (paymentData.proofFile) {
+        proofUrl = await uploadImageToImgBB(paymentData.proofFile);
+      }
+      
       const plan = plans.find((p) => p.id === selectedPlan);
       await subscriptionApi.submitPayment({
         plan: selectedPlan.toUpperCase(),
         amount: plan.price,
         baridimobRef: paymentData.baridimobRef,
-        paymentProof: paymentData.paymentProof || 'https://example.com/proof.jpg',
+        paymentProof: proofUrl,
       });
-      alert('تم إرسال طلب الدفع بنجاح! في انتظار موافقة المدير.');
+      
+      alert('تم إرسال طلب الدفع بنجاح! سيتم مراجعته خلال 24 ساعة.');
       setShowPaymentModal(false);
+      setPaymentData({ baridimobRef: '', paymentProof: '', proofFile: null });
       loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'حدث خطأ في إرسال الطلب');
@@ -235,8 +271,36 @@ export default function MerchantSubscription() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2">
-                  رابط لقطة الشاشة (اختياري)
+                  إثبات الدفع - لقطة الشاشة *
                 </label>
+                
+                {/* File Upload */}
+                <div className="mb-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    📸 ارفع لقطة شاشة من تطبيق BaridiMob (أقل من 5 ميجابايت)
+                  </p>
+                </div>
+
+                {/* Preview */}
+                {paymentData.proofFile && (
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span>
+                      <span className="text-sm text-green-800">
+                        تم اختيار الملف: {paymentData.proofFile.name}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Alternative URL input */}
+                <div className="text-center text-sm text-gray-500 mb-2">أو</div>
                 <input
                   type="url"
                   value={paymentData.paymentProof}
@@ -244,11 +308,8 @@ export default function MerchantSubscription() {
                     setPaymentData({ ...paymentData, paymentProof: e.target.value })
                   }
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="https://..."
+                  placeholder="🔗 رابط الصورة (اختياري)"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  يمكنك رفع الصورة على ImgBB أو Imgur
-                </p>
               </div>
 
               <div className="flex gap-3 pt-4">

@@ -78,4 +78,10 @@ export class AdminController {
   async activateTenant(@Param('id') tenantId: string) {
     return this.adminService.activateTenant(tenantId);
   }
+
+  @Post('maintenance/fix-features')
+  @ApiOperation({ summary: 'Apply feature schema fix (Super Admin only)' })
+  async applyFeatureSchemaFix() {
+    return this.adminService.applyFeatureSchemaFix();
+  }
 }

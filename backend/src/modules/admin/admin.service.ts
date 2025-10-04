@@ -231,4 +231,165 @@ export class AdminService {
 
     return { message: 'Tenant activated successfully' };
   }
+
+  // Run feature schema fix (variants, bundles, plan flags, checkoutConfig)
+  async applyFeatureSchemaFix() {
+    const sql = `
+DO $$
+BEGIN
+    -- 1) Tenant.checkoutConfig JSON column
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'Tenant' AND column_name = 'checkoutConfig'
+    ) THEN
+        ALTER TABLE "Tenant" ADD COLUMN "checkoutConfig" JSONB;
+        RAISE NOTICE 'Added column Tenant.checkoutConfig';
+    END IF;
+
+    -- 2) ProductOption table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'ProductOption'
+    ) THEN
+        CREATE TABLE "ProductOption" (
+            id TEXT PRIMARY KEY,
+            "productId" TEXT NOT NULL,
+            name TEXT NOT NULL,
+            position INT NOT NULL DEFAULT 0,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL
+        );
+        RAISE NOTICE 'Created table ProductOption';
+    END IF;
+
+    -- 3) ProductOptionValue table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'ProductOptionValue'
+    ) THEN
+        CREATE TABLE "ProductOptionValue" (
+            id TEXT PRIMARY KEY,
+            "optionId" TEXT NOT NULL,
+            value TEXT NOT NULL,
+            position INT NOT NULL DEFAULT 0,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL
+        );
+        RAISE NOTICE 'Created table ProductOptionValue';
+    END IF;
+
+    -- 4) ProductVariant table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'ProductVariant'
+    ) THEN
+        CREATE TABLE "ProductVariant" (
+            id TEXT PRIMARY KEY,
+            "productId" TEXT NOT NULL,
+            sku TEXT,
+            barcode TEXT,
+            price DECIMAL(10,2),
+            stock INT,
+            "isActive" BOOLEAN NOT NULL DEFAULT TRUE,
+            options JSONB NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL
+        );
+        RAISE NOTICE 'Created table ProductVariant';
+    END IF;
+
+    -- 5) BundleOffer table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'BundleOffer'
+    ) THEN
+        CREATE TABLE "BundleOffer" (
+            id TEXT PRIMARY KEY,
+            "productId" TEXT NOT NULL,
+            "minQuantity" INT NOT NULL,
+            "bundlePrice" DECIMAL(10,2) NOT NULL,
+            "isActive" BOOLEAN NOT NULL DEFAULT TRUE,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL
+        );
+        RAISE NOTICE 'Created table BundleOffer';
+    END IF;
+
+    -- 6) PlanFeatureFlags table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'PlanFeatureFlags'
+    ) THEN
+        CREATE TABLE "PlanFeatureFlags" (
+            id TEXT PRIMARY KEY,
+            plan "SubscriptionPlan" NOT NULL UNIQUE,
+            "variantsEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
+            "quantityDiscountsEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
+            "checkoutCustomizationEnabled" BOOLEAN NOT NULL DEFAULT FALSE,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL
+        );
+        RAISE NOTICE 'Created table PlanFeatureFlags';
+    END IF;
+
+    -- 7) FKs and Indexes (create if missing)
+    -- ProductOption.productId -> Product.id
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'ProductOption_productId_fkey'
+    ) THEN
+        ALTER TABLE "ProductOption"
+            ADD CONSTRAINT "ProductOption_productId_fkey"
+            FOREIGN KEY ("productId") REFERENCES "Product"(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+
+    -- ProductOptionValue.optionId -> ProductOption.id
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'ProductOptionValue_optionId_fkey'
+    ) THEN
+        ALTER TABLE "ProductOptionValue"
+            ADD CONSTRAINT "ProductOptionValue_optionId_fkey"
+            FOREIGN KEY ("optionId") REFERENCES "ProductOption"(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+
+    -- ProductVariant.productId -> Product.id
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'ProductVariant_productId_fkey'
+    ) THEN
+        ALTER TABLE "ProductVariant"
+            ADD CONSTRAINT "ProductVariant_productId_fkey"
+            FOREIGN KEY ("productId") REFERENCES "Product"(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+
+    -- BundleOffer.productId -> Product.id
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'BundleOffer_productId_fkey'
+    ) THEN
+        ALTER TABLE "BundleOffer"
+            ADD CONSTRAINT "BundleOffer_productId_fkey"
+            FOREIGN KEY ("productId") REFERENCES "Product"(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+
+    -- indexes
+    CREATE INDEX IF NOT EXISTS "ProductOption_productId_idx" ON "ProductOption"("productId");
+    CREATE INDEX IF NOT EXISTS "ProductOptionValue_optionId_idx" ON "ProductOptionValue"("optionId");
+    CREATE INDEX IF NOT EXISTS "ProductVariant_productId_idx" ON "ProductVariant"("productId");
+    CREATE INDEX IF NOT EXISTS "ProductVariant_isActive_idx" ON "ProductVariant"("isActive");
+    CREATE INDEX IF NOT EXISTS "BundleOffer_productId_idx" ON "BundleOffer"("productId");
+    CREATE INDEX IF NOT EXISTS "BundleOffer_isActive_idx" ON "BundleOffer"("isActive");
+
+END $$;
+
+-- Seed default feature flags for plans if missing
+INSERT INTO "PlanFeatureFlags" (id, plan, "variantsEnabled", "quantityDiscountsEnabled", "checkoutCustomizationEnabled")
+SELECT gen_random_uuid(), 'STANDARD', FALSE, FALSE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM "PlanFeatureFlags" WHERE plan = 'STANDARD');
+
+INSERT INTO "PlanFeatureFlags" (id, plan, "variantsEnabled", "quantityDiscountsEnabled", "checkoutCustomizationEnabled")
+SELECT gen_random_uuid(), 'PRO', TRUE, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM "PlanFeatureFlags" WHERE plan = 'PRO');
+`;
+
+    await this.prisma.$executeRawUnsafe(sql);
+    return { message: 'Feature schema fix applied successfully' };
+  }
 }

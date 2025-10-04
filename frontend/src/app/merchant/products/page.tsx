@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { uploadImageToImgBB } from '@/lib/upload';
 
 export default function MerchantProducts() {
   const router = useRouter();
@@ -19,7 +20,19 @@ export default function MerchantProducts() {
     price: '',
     stock: '',
     sku: '',
+    images: [] as string[],
+    variants: [] as any[],
+    category: '',
+    tags: '',
+    weight: '',
+    dimensions: { length: '', width: '', height: '' },
+    seoTitle: '',
+    seoDescription: '',
+    isActive: true,
+    isFeatured: false,
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [showVariants, setShowVariants] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -36,29 +49,105 @@ export default function MerchantProducts() {
     }
   };
 
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      try {
+        const url = await uploadImageToImgBB(file);
+        urls.push(url);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    }
+    return urls;
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setImageFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addVariant = () => {
+    setFormData(prev => ({
+      ...prev,
+      variants: [...prev.variants, { name: '', values: [''], price: '', stock: '' }]
+    }));
+  };
+
+  const removeVariant = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateVariant = (index: number, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.map((variant, i) => 
+        i === index ? { ...variant, [field]: value } : variant
+      )
+    }));
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await productsApi.create({
+      // Upload images first
+      const imageUrls = await uploadImages(imageFiles);
+      
+      const productData = {
         ...formData,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-      });
+        stock: parseInt(formData.stock) || 0,
+        weight: parseFloat(formData.weight) || 0,
+        images: imageUrls,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        dimensions: {
+          length: parseFloat(formData.dimensions.length) || 0,
+          width: parseFloat(formData.dimensions.width) || 0,
+          height: parseFloat(formData.dimensions.height) || 0,
+        }
+      };
+
+      await productsApi.create(productData);
       alert('تم إضافة المنتج بنجاح!');
-      setShowAddModal(false);
-      setFormData({
-        name: '',
-        nameAr: '',
-        description: '',
-        descriptionAr: '',
-        price: '',
-        stock: '',
-        sku: '',
-      });
+      resetForm();
       loadProducts();
     } catch (error: any) {
       alert(error.response?.data?.message || 'حدث خطأ في إضافة المنتج');
     }
+  };
+
+  const resetForm = () => {
+    setShowAddModal(false);
+    setFormData({
+      name: '',
+      nameAr: '',
+      description: '',
+      descriptionAr: '',
+      price: '',
+      stock: '',
+      sku: '',
+      images: [],
+      variants: [],
+      category: '',
+      tags: '',
+      weight: '',
+      dimensions: { length: '', width: '', height: '' },
+      seoTitle: '',
+      seoDescription: '',
+      isActive: true,
+      isFeatured: false,
+    });
+    setImageFiles([]);
+    setShowVariants(false);
   };
 
   const handleDeleteProduct = async (id: string) => {

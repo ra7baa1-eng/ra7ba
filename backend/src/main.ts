@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import { AdminService } from './modules/admin/admin.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -61,6 +62,19 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  // Run maintenance tasks on boot if flag is set
+  if (process.env.MAINTENANCE_FIX_FEATURES_ON_BOOT === 'true') {
+    console.log('MAINTENANCE_FIX_FEATURES_ON_BOOT is true, applying feature schema fix...');
+    const adminService = app.get(AdminService);
+    try {
+      await adminService.applyFeatureSchemaFix();
+      console.log('✅ Feature schema fix applied successfully on boot.');
+    } catch (error) {
+      console.error('❌ Error applying feature schema fix on boot:', error);
+    }
+  }
+
 
   const port = process.env.PORT || 10000;
   await app.listen(port);

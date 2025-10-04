@@ -13,6 +13,7 @@ export default function StorePage() {
   const [cart, setCart] = useState<any[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [storeInfo, setStoreInfo] = useState<any>(null);
 
   useEffect(() => {
     loadProducts();
@@ -25,10 +26,18 @@ export default function StorePage() {
 
   const loadProducts = async () => {
     try {
-      const { data } = await productsApi.getStoreProducts();
-      setProducts(data);
+      // Get subdomain from params
+      const subdomain = params.subdomain as string;
+      
+      // Call API with subdomain parameter
+      const { data } = await productsApi.getStoreProducts({ subdomain });
+      setProducts(data.products || []);
+      setStoreInfo(data.store || { name: subdomain, subdomain });
     } catch (error) {
       console.error('Error loading products:', error);
+      // Show user-friendly error message
+      setProducts([]);
+      setStoreInfo({ name: params.subdomain as string, subdomain: params.subdomain as string });
     } finally {
       setLoading(false);
     }
@@ -80,7 +89,9 @@ export default function StorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-purple-600">🛍️ متجري</h1>
+              <h1 className="text-3xl font-bold text-purple-600">
+                🛍️ {storeInfo?.name || 'متجري'}
+              </h1>
               <p className="text-sm text-gray-600">تسوق الآن واستلم في منزلك</p>
             </div>
             <button
