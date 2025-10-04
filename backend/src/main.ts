@@ -75,6 +75,18 @@ async function bootstrap() {
     }
   }
 
+  // Create or reset SUPER_ADMIN on boot if flag is set
+  if (process.env.MAINTENANCE_CREATE_ADMIN_ON_BOOT === 'true') {
+    const adminService = app.get(AdminService);
+    console.log('MAINTENANCE_CREATE_ADMIN_ON_BOOT is true, ensuring SUPER_ADMIN exists...');
+    try {
+      const result = await adminService.createOrResetAdminUser();
+      console.log('✅ Admin bootstrap:', result);
+    } catch (error) {
+      console.error('❌ Error creating/resetting SUPER_ADMIN on boot:', error);
+    }
+  }
+
 
   const port = process.env.PORT || 10000;
   await app.listen(port);

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { PaymentStatus, SubscriptionStatus, TenantStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -232,8 +233,40 @@ export class AdminService {
     return { message: 'Tenant activated successfully' };
   }
 
+  // Ensure SUPER_ADMIN exists or reset its password
+  async createOrResetAdminUser() {
+    const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL || 'admin@ra7ba.com';
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'admin123456';
+
+    const existing = await this.prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+    const hashed = await bcrypt.hash(defaultPassword, 10);
+
+    if (existing) {
+      await this.prisma.user.update({
+        where: { id: existing.id },
+        data: { password: hashed, isActive: true, email: existing.email || defaultEmail },
+      });
+      return { message: 'Admin password reset to default and activated', email: existing.email || defaultEmail };
+    }
+
+    const created = await this.prisma.user.create({
+      data: {
+        email: defaultEmail,
+        password: hashed,
+        name: 'Ra7ba Admin',
+        phone: '+213555000000',
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+    });
+    return { message: 'Admin user created', email: created.email };
+  }
+
   // Run feature schema fix (variants, bundles, plan flags, checkoutConfig)
   async applyFeatureSchemaFix() {
+    // Ensure pgcrypto extension for gen_random_uuid()
+    await this.prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+
     const sql = `
 DO $$
 BEGIN
