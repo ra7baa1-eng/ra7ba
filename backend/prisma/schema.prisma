@@ -106,7 +106,7 @@ model Tenant {
   name        String
   nameAr      String
   description String?
-  // descriptionAr String? // Temporarily disabled due to migration issues
+  descriptionAr String?
   logo        String?
   banner      String?
   theme       Json?         // Store theme customization
