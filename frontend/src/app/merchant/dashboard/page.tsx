@@ -175,16 +175,19 @@ export default function MerchantDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">💰</div>
-              <div className="text-sm text-gray-500">اليوم</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">إجمالي الطلبات</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboard?.stats?.totalOrders || 0}
+                </p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <span className="text-2xl">📦</span>
+              </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {formatCurrency(stats?.todayRevenue || 0)}
-            </div>
-            <div className="text-gray-600">إيرادات اليوم</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm">

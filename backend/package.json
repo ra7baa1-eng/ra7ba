@@ -22,7 +22,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "db:fix": "node fix-database.js"
+    "db:fix": "node fix-database.js",
+    "db:emergency": "node emergency-fix.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
