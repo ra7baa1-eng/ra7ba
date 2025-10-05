@@ -4,6 +4,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { AdminService } from './modules/admin/admin.service';
+import * as express from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -62,6 +64,10 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  // Serve local uploads directory (for StorageService local mode)
+  const uploadsPath = path.join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
 
   // Run maintenance tasks on boot if flag is set
   if (process.env.MAINTENANCE_FIX_FEATURES_ON_BOOT === 'true') {
