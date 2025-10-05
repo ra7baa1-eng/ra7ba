@@ -70,8 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             // Get user info again
             const userResponse = await authApi.getProfile();
-            setUser(userResponse.data);
-            localStorage.setItem('user', JSON.stringify(userResponse.data));
+            const freshUser = (userResponse?.data && (userResponse.data as any).user) || parsedUser;
+            setUser(freshUser);
+            localStorage.setItem('user', JSON.stringify(freshUser));
           } catch (refreshError) {
             // Refresh failed, logout
             console.log('Refresh token failed, logging out');

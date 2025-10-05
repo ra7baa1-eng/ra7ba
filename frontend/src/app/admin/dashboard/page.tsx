@@ -23,9 +23,30 @@ export default function AdminDashboard() {
         adminApi.getPendingPayments(),
       ]);
 
-      setStats(statsRes.data);
-      setTenants(tenantsRes.data);
-      setPendingPayments(paymentsRes.data);
+      // Backend shapes:
+      // - getStats(): { tenants: { total, active, trial, suspended }, orders: { total }, revenue: { total }, recentOrders: [...] }
+      // - getTenants(): { data: Tenant[], meta: {...} }
+      // - getPendingPayments(): Payment[]
+
+      const s = statsRes?.data || {};
+      setStats({
+        totalTenants: s.tenants?.total ?? 0,
+        activeTenants: s.tenants?.active ?? 0,
+        trialTenants: s.tenants?.trial ?? 0,
+        suspendedTenants: s.tenants?.suspended ?? 0,
+        recentOrders: Array.isArray(s.recentOrders) ? s.recentOrders : [],
+      });
+
+      const tenantsPayload = tenantsRes?.data;
+      const tenantsArray = tenantsPayload && Array.isArray(tenantsPayload.data)
+        ? tenantsPayload.data
+        : Array.isArray(tenantsPayload)
+        ? tenantsPayload
+        : [];
+      setTenants(tenantsArray);
+
+      const paymentsArray = Array.isArray(paymentsRes?.data) ? paymentsRes.data : [];
+      setPendingPayments(paymentsArray);
     } catch (error) {
       console.error('Error loading data:', error);
       router.push('/auth/login');

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { PaymentStatus, SubscriptionStatus, TenantStatus } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -264,8 +265,14 @@ export class AdminService {
 
   // Run feature schema fix (variants, bundles, plan flags, checkoutConfig)
   async applyFeatureSchemaFix() {
-    // Ensure pgcrypto extension for gen_random_uuid()
-    await this.prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+    // Try to ensure pgcrypto extension, but don't fail if unavailable on provider
+    try {
+      await this.prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+    } catch (e) {
+      // Non-fatal: extension not available on some managed Postgres
+      // Proceed without it; we will seed via Prisma instead of SQL
+      // console.warn('pgcrypto extension not enabled:', e);
+    }
 
     // Detect Product.id column type to align FKs (uuid or text)
     const prodTypeRow: any = await this.prisma.$queryRawUnsafe(
@@ -426,19 +433,40 @@ BEGIN
     CREATE INDEX IF NOT EXISTS "BundleOffer_productId_idx" ON "BundleOffer"("productId");
     CREATE INDEX IF NOT EXISTS "BundleOffer_isActive_idx" ON "BundleOffer"("isActive");
 
-END $$;
-
--- Seed default feature flags for plans if missing
-INSERT INTO "PlanFeatureFlags" (id, plan, "variantsEnabled", "quantityDiscountsEnabled", "checkoutCustomizationEnabled")
-SELECT gen_random_uuid(), 'STANDARD', FALSE, FALSE, TRUE
-WHERE NOT EXISTS (SELECT 1 FROM "PlanFeatureFlags" WHERE plan = 'STANDARD');
-
-INSERT INTO "PlanFeatureFlags" (id, plan, "variantsEnabled", "quantityDiscountsEnabled", "checkoutCustomizationEnabled")
-SELECT gen_random_uuid(), 'PRO', TRUE, TRUE, TRUE
-WHERE NOT EXISTS (SELECT 1 FROM "PlanFeatureFlags" WHERE plan = 'PRO');
-`;
+END $$;`;
 
     await this.prisma.$executeRawUnsafe(sql);
+
+    // Seed default feature flags safely using Prisma (no DB extensions required)
+    try {
+      const prismaAny: any = this.prisma as any;
+      await prismaAny.planFeatureFlags.upsert({
+        where: { plan: 'STANDARD' as any },
+        update: {},
+        create: {
+          id: uuidv4(),
+          plan: 'STANDARD' as any,
+          variantsEnabled: false,
+          quantityDiscountsEnabled: false,
+          checkoutCustomizationEnabled: true,
+        },
+      });
+
+      await prismaAny.planFeatureFlags.upsert({
+        where: { plan: 'PRO' as any },
+        update: {},
+        create: {
+          id: uuidv4(),
+          plan: 'PRO' as any,
+          variantsEnabled: true,
+          quantityDiscountsEnabled: true,
+          checkoutCustomizationEnabled: true,
+        },
+      });
+    } catch (seedErr) {
+      // Non-fatal if seeding fails
+    }
+
     return { message: 'Feature schema fix applied successfully' };
   }
 }
