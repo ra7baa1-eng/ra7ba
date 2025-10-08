@@ -19,7 +19,7 @@ export default function TrackOrderPage() {
 
   const loadOrder = async () => {
     try {
-      const { data } = await ordersApi.track(params.orderNumber as string);
+      const { data } = await ordersApi.trackOrder(params.orderNumber as string);
       setOrder(data);
     } catch (error: any) {
       setError(error.response?.data?.message || 'الطلب غير موجود');
