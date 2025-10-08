@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { SupabaseModule } from './common/supabase/supabase.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -30,6 +31,7 @@ import { HealthController } from './health/health.controller';
     
     // Core modules
     PrismaModule,
+    SupabaseModule,
     
     // Feature modules
     AuthModule,
