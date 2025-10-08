@@ -1,21 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import { subscriptionApi } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
 
+type PaymentData = {
+  paymentProof: string;
+  proofFile: File | null;
+};
+
 export default function MerchantSubscription() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<any>(null);
-  const [plans, setPlans] = useState<any[]>([]);
+  type Plan = {
+    id: string;
+    nameAr: string;
+    price: number;
+    featuresAr: string[];
+  };
+
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [paymentData, setPaymentData] = useState({
-    baridimobRef: '',
+  const [paymentData, setPaymentData] = useState<PaymentData>({
     paymentProof: '',
-    proofFile: null as File | null,
+    proofFile: null,
   });
 
   useEffect(() => {
@@ -39,7 +50,7 @@ export default function MerchantSubscription() {
 
   // Image upload handled via shared utility (ImgBB)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type and size
@@ -51,38 +62,41 @@ export default function MerchantSubscription() {
         alert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
         return;
       }
-      setPaymentData({ ...paymentData, proofFile: file });
+      setPaymentData((prev: PaymentData) => ({ ...prev, proofFile: file }));
+    } else {
+      setPaymentData((prev: PaymentData) => ({ ...prev, proofFile: null }));
     }
   };
 
-  const handleSubmitPayment = async (e: React.FormEvent) => {
+  const handleSubmitPayment = async (e: FormEvent) => {
     e.preventDefault();
-    
-    // Validate BaridiMob reference (should be 20 digits)
-    if (!/^\d{20}$/.test(paymentData.baridimobRef)) {
-      alert('رقم عملية BaridiMob يجب أن يكون 20 رقم بالضبط');
+
+    if (!paymentData.proofFile && !paymentData.paymentProof.trim()) {
+      alert('يرجى رفع صورة لإثبات الدفع أو إدخال رابط صالح');
       return;
     }
-    
+
     try {
       let proofUrl = paymentData.paymentProof;
-      
+
       // Upload image if file is selected
       if (paymentData.proofFile) {
         proofUrl = await uploadImageToImgBB(paymentData.proofFile);
       }
-      
       const plan = plans.find((p) => p.id === selectedPlan);
+      if (!plan) {
+        alert('يرجى اختيار خطة صالحة قبل إرسال الطلب');
+        return;
+      }
       await subscriptionApi.submitPayment({
         plan: selectedPlan.toUpperCase(),
         amount: plan.price,
-        baridimobRef: paymentData.baridimobRef,
         paymentProof: proofUrl,
       });
       
       alert('تم إرسال طلب الدفع بنجاح! سيتم مراجعته خلال 24 ساعة.');
       setShowPaymentModal(false);
-      setPaymentData({ baridimobRef: '', paymentProof: '', proofFile: null });
+      setPaymentData({ paymentProof: '', proofFile: null });
       loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'حدث خطأ في إرسال الطلب');
@@ -247,28 +261,12 @@ export default function MerchantSubscription() {
               <ol className="text-sm text-blue-800 space-y-1">
                 <li>1. افتح تطبيق BaridiMob</li>
                 <li>2. أرسل المبلغ إلى: <strong>0550123456</strong></li>
-                <li>3. انسخ رقم العملية</li>
-                <li>4. الصق الرقم أدناه</li>
+                <li>3. التقط صورة (لقطة شاشة) لتأكيد الدفع</li>
+                <li>4. ارفع الصورة أدناه</li>
               </ol>
             </div>
 
             <form onSubmit={handleSubmitPayment} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  رقم عملية BaridiMob *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={paymentData.baridimobRef}
-                  onChange={(e) =>
-                    setPaymentData({ ...paymentData, baridimobRef: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="123456789"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   إثبات الدفع - لقطة الشاشة *
