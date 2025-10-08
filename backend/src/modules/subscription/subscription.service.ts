@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { SubscriptionPlan, PaymentStatus } from '@prisma/client';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+  ) {}
 
   // Get subscription plans
   getPlans() {
@@ -83,11 +87,12 @@ export class SubscriptionService {
   async submitPayment(
     tenantId: string,
     data: {
-      plan: SubscriptionPlan;
-      amount: number;
+      plan: SubscriptionPlan | string;
+      paymentProof?: string;
+      payerEmail?: string;
       baridimobRef?: string;
-      paymentProof: string; // File URL
     },
+    proofFile?: Express.Multer.File,
   ) {
     const subscription = await this.prisma.subscription.findUnique({
       where: { tenantId },
@@ -97,13 +102,42 @@ export class SubscriptionService {
       throw new NotFoundException('Subscription not found');
     }
 
+    if (!data?.payerEmail || !data.payerEmail.trim()) {
+      throw new BadRequestException('Payer email is required');
+    }
+
+    // Normalize plan value
+    const normalizedPlan = typeof data.plan === 'string'
+      ? data.plan.toUpperCase()
+      : data.plan;
+    if (!Object.values(SubscriptionPlan).includes(normalizedPlan as SubscriptionPlan)) {
+      throw new BadRequestException('Invalid subscription plan');
+    }
+
+    let proofUrl = (data.paymentProof || '').trim();
+
+    if (proofFile) {
+      try {
+        proofUrl = await this.storageService.uploadFile(proofFile, 'payments');
+      } catch (error) {
+        throw new BadRequestException('Failed to upload payment proof');
+      }
+    }
+
+    if (!proofUrl) {
+      throw new BadRequestException('Payment proof is required');
+    }
+
+    const amount = this.calculatePlanPrice(normalizedPlan as SubscriptionPlan);
+
     // Create payment record
     const payment = await this.prisma.payment.create({
       data: {
         subscriptionId: subscription.id,
-        amount: data.amount,
+        amount,
         baridimobRef: data.baridimobRef,
-        paymentProof: data.paymentProof,
+        payerEmail: data.payerEmail.trim(),
+        paymentProof: proofUrl,
         status: PaymentStatus.PENDING,
       },
     });
@@ -112,7 +146,7 @@ export class SubscriptionService {
     await this.prisma.subscription.update({
       where: { id: subscription.id },
       data: {
-        plan: data.plan,
+        plan: normalizedPlan as SubscriptionPlan,
         status: 'PENDING_PAYMENT',
       },
     });

@@ -4,9 +4,16 @@ import { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import { subscriptionApi } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { uploadImageToImgBB } from '@/lib/upload';
+
+type Plan = {
+  id: string;
+  nameAr: string;
+  price: number;
+  featuresAr: string[];
+};
 
 type PaymentData = {
+  payerEmail: string;
   paymentProof: string;
   proofFile: File | null;
 };
@@ -14,17 +21,11 @@ type PaymentData = {
 export default function MerchantSubscription() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<any>(null);
-  type Plan = {
-    id: string;
-    nameAr: string;
-    price: number;
-    featuresAr: string[];
-  };
-
   const [plans, setPlans] = useState<Plan[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [paymentData, setPaymentData] = useState<PaymentData>({
+    payerEmail: '',
     paymentProof: '',
     proofFile: null,
   });
@@ -62,7 +63,7 @@ export default function MerchantSubscription() {
         alert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
         return;
       }
-      setPaymentData((prev: PaymentData) => ({ ...prev, proofFile: file }));
+      setPaymentData((prev: PaymentData) => ({ ...prev, proofFile: file, paymentProof: '' }));
     } else {
       setPaymentData((prev: PaymentData) => ({ ...prev, proofFile: null }));
     }
@@ -71,32 +72,49 @@ export default function MerchantSubscription() {
   const handleSubmitPayment = async (e: FormEvent) => {
     e.preventDefault();
 
+    if (!paymentData.payerEmail.trim()) {
+      alert('يرجى إدخال البريد الإلكتروني المرتبط بالدفع');
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(paymentData.payerEmail.trim())) {
+      alert('يرجى إدخال بريد إلكتروني صالح');
+      return;
+    }
+
     if (!paymentData.proofFile && !paymentData.paymentProof.trim()) {
       alert('يرجى رفع صورة لإثبات الدفع أو إدخال رابط صالح');
       return;
     }
 
     try {
-      let proofUrl = paymentData.paymentProof;
-
-      // Upload image if file is selected
-      if (paymentData.proofFile) {
-        proofUrl = await uploadImageToImgBB(paymentData.proofFile);
-      }
-      const plan = plans.find((p) => p.id === selectedPlan);
+      const plan = plans.find((p: Plan) => p.id === selectedPlan);
       if (!plan) {
         alert('يرجى اختيار خطة صالحة قبل إرسال الطلب');
         return;
       }
-      await subscriptionApi.submitPayment({
-        plan: selectedPlan.toUpperCase(),
-        amount: plan.price,
-        paymentProof: proofUrl,
-      });
+
+      const formData = new FormData();
+      formData.append('plan', selectedPlan.toUpperCase());
+      formData.append('payerEmail', paymentData.payerEmail.trim());
+
+      if (paymentData.proofFile) {
+        formData.append('proofFile', paymentData.proofFile);
+      } else if (paymentData.paymentProof.trim()) {
+        formData.append('paymentProof', paymentData.paymentProof.trim());
+      }
+
+      if (!formData.has('proofFile') && !formData.has('paymentProof')) {
+        alert('تعذر قراءة ملف إثبات الدفع. يرجى المحاولة من جديد.');
+        return;
+      }
+
+      await subscriptionApi.submitPayment(formData);
       
       alert('تم إرسال طلب الدفع بنجاح! سيتم مراجعته خلال 24 ساعة.');
       setShowPaymentModal(false);
-      setPaymentData({ paymentProof: '', proofFile: null });
+      setPaymentData({ payerEmail: '', paymentProof: '', proofFile: null });
       loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'حدث خطأ في إرسال الطلب');
@@ -267,6 +285,22 @@ export default function MerchantSubscription() {
             </div>
 
             <form onSubmit={handleSubmitPayment} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  البريد الإلكتروني المرتبط بالدفع *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={paymentData.payerEmail}
+                  onChange={(e) =>
+                    setPaymentData((prev) => ({ ...prev, payerEmail: e.target.value }))
+                  }
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="example@email.com"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   إثبات الدفع - لقطة الشاشة *

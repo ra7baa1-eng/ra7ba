@@ -164,9 +164,10 @@ model Payment {
   
   amount          Decimal        @db.Decimal(10, 2)
   currency        String         @default("DZD")
-  
+
   // BaridiMob details
   baridimobRef    String?
+  payerEmail      String?
   paymentProof    String?        // Uploaded receipt/screenshot
   
   status          PaymentStatus  @default(PENDING)

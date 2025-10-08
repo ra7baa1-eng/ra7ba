@@ -68,9 +68,9 @@ export default function MerchantDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href={`https://${tenant?.subdomain}.rahba.dz`}
+                href={tenant?.subdomain ? `/store/${tenant.subdomain}` : '#'}
                 target="_blank"
-                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition"
+                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 عرض المتجر 🔗
               </Link>
