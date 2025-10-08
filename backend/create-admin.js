@@ -25,11 +25,11 @@ async function createAdminUser() {
     }
 
     // Create admin user
-    const hashedPassword = await bcrypt.hash('admin123456', 10);
+    const hashedPassword = await bcrypt.hash('abdo154122!ChangeMe', 10);
     
     const admin = await prisma.user.create({
       data: {
-        email: 'admin@ra7ba.com',
+        email: 'ra7baa1@gmail.com',
         password: hashedPassword,
         name: 'Ra7ba Admin',
         phone: '+213555000000',
@@ -39,8 +39,8 @@ async function createAdminUser() {
     });
 
     console.log('✅ Admin user created successfully!');
-    console.log('📧 Email: admin@ra7ba.com');
-    console.log('🔑 Password: admin123456');
+    console.log('📧 Email: ra7baa1@gmail.com');
+    console.log('🔑 Password: abdo154122!ChangeMe');
     console.log('⚠️  Please change the password after first login!');
 
   } catch (error) {

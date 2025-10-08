@@ -236,8 +236,8 @@ export class AdminService {
 
   // Ensure SUPER_ADMIN exists or reset its password
   async createOrResetAdminUser() {
-    const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL || 'admin@ra7ba.com';
-    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'admin123456';
+    const defaultEmail = process.env.ADMIN_DEFAULT_EMAIL || 'ra7baa1@gmail.com';
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'abdo154122!ChangeMe';
 
     const existing = await this.prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
     const hashed = await bcrypt.hash(defaultPassword, 10);

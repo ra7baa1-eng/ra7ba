@@ -13,9 +13,19 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const token = window.localStorage.getItem('accessToken');
+        if (token) {
+          // Axios v1 may use AxiosHeaders; support both shapes
+          const headers: any = config.headers || {};
+          if (headers && typeof headers.set === 'function') {
+            headers.set('Authorization', `Bearer ${token}`);
+          } else {
+            config.headers = { ...(config.headers || {}), Authorization: `Bearer ${token}` } as any;
+          }
+        }
+      } catch (_) {
+        // noop: accessing localStorage may fail in some environments
       }
     }
     return config;
@@ -28,28 +38,44 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    // If running on server, don't attempt browser-side refresh
+    if (typeof window === 'undefined') {
+      return Promise.reject(error);
+    }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = window.localStorage.getItem('refreshToken');
         if (refreshToken) {
           const { data } = await axios.post(`${API_URL}/auth/refresh`, {
             refreshToken,
           });
 
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
+          try {
+            window.localStorage.setItem('accessToken', data.accessToken);
+            window.localStorage.setItem('refreshToken', data.refreshToken);
+          } catch (_) {
+            // Ignore storage write errors
+          }
 
-          originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+          // Ensure Authorization header is set on the retried request
+          const headers: any = originalRequest.headers || {};
+          if (headers && typeof headers.set === 'function') {
+            headers.set('Authorization', `Bearer ${data.accessToken}`);
+          } else {
+            originalRequest.headers = { ...(originalRequest.headers || {}), Authorization: `Bearer ${data.accessToken}` } as any;
+          }
+
           return api(originalRequest);
         }
       } catch (refreshError) {
-        localStorage.clear();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/login';
-        }
+        try {
+          window.localStorage.clear();
+        } catch (_) {}
+        window.location.href = '/auth/login';
+        return Promise.reject(refreshError);
       }
     }
 

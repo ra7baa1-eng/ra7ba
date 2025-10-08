@@ -93,6 +93,17 @@ export default function AdminDashboard() {
     );
   }
 
+  const formatDate = (value: any) => {
+    try {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('ar-DZ');
+    } catch (_) {
+      return '—';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -234,8 +245,8 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm">
-                        <div>{tenant.owner?.name}</div>
-                        <div className="text-gray-500">{tenant.owner?.email}</div>
+                        <div>{tenant.owner?.name ? tenant.owner.name : '—'}</div>
+                        <div className="text-gray-500">{tenant.owner?.email ? tenant.owner.email : '—'}</div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -250,14 +261,14 @@ export default function AdminDashboard() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        {tenant.status}
+                        {tenant.status ? tenant.status : '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {tenant.subscription?.plan || 'N/A'}
+                      {tenant.subscription?.plan ? tenant.subscription.plan : 'N/A'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
-                      {new Date(tenant.createdAt).toLocaleDateString('ar-DZ')}
+                      {tenant.createdAt ? formatDate(tenant.createdAt) : '—'}
                     </td>
                   </tr>
                 ))}

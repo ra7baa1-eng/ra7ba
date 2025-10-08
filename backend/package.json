@@ -24,7 +24,8 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "db:fix": "node fix-database.js",
     "db:emergency": "node emergency-fix.js",
-    "db:features": "node fix-features.js"
+    "db:features": "node fix-features.js",
+    "admin:create": "node create-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
