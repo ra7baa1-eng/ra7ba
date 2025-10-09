@@ -1,0 +1,23 @@
+﻿[
+    {
+        "envVar":  {
+                       "key":  "NEXT_PUBLIC_APP_NAME",
+                       "value":  "Ra7ba"
+                   },
+        "cursor":  "5EoTuw7xxaJmZGFsaTl2YzczZWNxcjgw"
+    },
+    {
+        "envVar":  {
+                       "key":  "NEXT_PUBLIC_API_URL",
+                       "value":  "https://ra7ba.onrender.com/api"
+                   },
+        "cursor":  "5EoTuw7xxaJmZGFsaTl2YzczZWNxcjdn"
+    },
+    {
+        "envVar":  {
+                       "key":  "NODE_ENV",
+                       "value":  "production"
+                   },
+        "cursor":  "5EoTuw7xxaJmZGFsaTl2YzczZWNxcjcw"
+    }
+]

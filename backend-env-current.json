@@ -1,0 +1,93 @@
+﻿[
+    {
+        "envVar":  {
+                       "key":  "MAINTENANCE_CREATE_ADMIN_ON_BOOT",
+                       "value":  "true"
+                   },
+        "cursor":  "PktVAUr_xSIzN3A1cGR2czczZW91OWhn"
+    },
+    {
+        "envVar":  {
+                       "key":  "MAINTENANCE_FIX_FEATURES_ON_BOOT",
+                       "value":  "true"
+                   },
+        "cursor":  "SjT3m21SOt10cDE1cGR2czczZWo0bjcw"
+    },
+    {
+        "envVar":  {
+                       "key":  "NEXT_PUBLIC_IMGBB_KEY",
+                       "value":  "1e8a000028996d5fffbddaaa0a8049ae"
+                   },
+        "cursor":  "KqwOy5xTPO12aGlsaTl2YzczZjU4dDJn"
+    },
+    {
+        "envVar":  {
+                       "key":  "JWT_REFRESH_EXPIRES_IN",
+                       "value":  "7d"
+                   },
+        "cursor":  "NJKz1eLaH-BuaDM3bWdlYzczZTRybnMw"
+    },
+    {
+        "envVar":  {
+                       "key":  "JWT_EXPIRES_IN",
+                       "value":  "1h"
+                   },
+        "cursor":  "NJKz1eLaH-BuaDM3bWdlYzczZTRybnJn"
+    },
+    {
+        "envVar":  {
+                       "key":  "FRONTEND_URL",
+                       "value":  "http://localhost:3000"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzRn"
+    },
+    {
+        "envVar":  {
+                       "key":  "PORT",
+                       "value":  "10000"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzQw"
+    },
+    {
+        "envVar":  {
+                       "key":  "NODE_ENV",
+                       "value":  "production"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzNn"
+    },
+    {
+        "envVar":  {
+                       "key":  "JWT_SECRET",
+                       "value":  "Ra7ba_JWT_S3cr3t_2024_Change_This_Now!"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzMw"
+    },
+    {
+        "envVar":  {
+                       "key":  "JWT_REFRESH_SECRET",
+                       "value":  "Ra7ba_R3fr3sh_S3cr3t_2024_Change_This_Now!"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzJn"
+    },
+    {
+        "envVar":  {
+                       "key":  "DATABASE_URL",
+                       "value":  "postgresql://rahba_user:N9B6LfuhoN58BZLE0caokbbJT0hEaItD@dpg-d3eu5kpr0fns73d1ii8g-a.frankfurt-postgres.render.com/rahba"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzIw"
+    },
+    {
+        "envVar":  {
+                       "key":  "ADMIN_DEFAULT_PASSWORD",
+                       "value":  "abdo154122!ChangeMe"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzFn"
+    },
+    {
+        "envVar":  {
+                       "key":  "ADMIN_DEFAULT_EMAIL",
+                       "value":  "ra7baa1@gmail.com"
+                   },
+        "cursor":  "FBUm1H2y6aJja25kaWVlczczY3R2MzEw"
+    }
+]
