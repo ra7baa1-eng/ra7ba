@@ -13,12 +13,12 @@ import {
 } from '@nestjs/common';
 import { AdminSupabaseService } from './admin-supabase.service';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, RolesGuard } from '@/common/guards/roles.guard';
+import { UserRole } from '@/shims/prisma-client';
 
 @Controller('admin')
 @UseGuards(SupabaseAuthGuard, RolesGuard)
-@Roles('super_admin')
+@Roles(UserRole.SUPER_ADMIN)
 export class AdminSupabaseController {
   constructor(private readonly adminService: AdminSupabaseService) {}
 

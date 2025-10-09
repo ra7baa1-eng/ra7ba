@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
-import { TenantStatus, SubscriptionStatus } from '@prisma/client';
+import { TenantStatus, SubscriptionStatus } from '@/shims/prisma-client';
 
 @Injectable()
 export class CronService {

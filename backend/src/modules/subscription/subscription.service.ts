@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { SubscriptionPlan, PaymentStatus } from '@prisma/client';
+import { SubscriptionPlan, PaymentStatus } from '@/shims/prisma-client';
 import { StorageService } from '../storage/storage.service';
 
 @Injectable()

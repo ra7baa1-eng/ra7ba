@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { MerchantService } from '../merchant/merchant.service';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../../shims/prisma-client';
 
 @Injectable()
 export class OrderService {

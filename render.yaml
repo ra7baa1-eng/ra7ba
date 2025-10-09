@@ -1,25 +1,47 @@
 services:
   # Backend API (NestJS)
+  - type: web
     name: ra7ba-backend
     runtime: node
     region: frankfurt
     plan: free
     rootDir: backend
-        fromDatabase:
-          name: ra7ba-db
-          property: connectionString
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://ra7ba-frontend.onrender.com
+      - key: SUPABASE_URL
+        value: https://tirfsghvgyaubcqwsliq.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://tirfsghvgyaubcqwsliq.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_PATH
+        value: uploads
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: ADMIN_EMAIL
-        value: admin@ra7ba.com
-      - key: ADMIN_PASSWORD
-        value: Admin123!ChangeMe
-      - key: CORS_ORIGINS
-        value: "https://ra7ba-frontend.onrender.com,*.ra7ba-frontend.onrender.com,http://localhost:3000"
-      - key: FRONTEND_URL
-        value: https://ra7ba-frontend.onrender.com
+      - key: JWT_EXPIRES_IN
+        value: 1h
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: ADMIN_DEFAULT_EMAIL
+        value: ra7baa1@gmail.com
+      - key: ADMIN_DEFAULT_PASSWORD
+        value: abdo154122!ChangeMe
+      - key: MAINTENANCE_CREATE_ADMIN_ON_BOOT
+        value: 'false'
+      - key: MAINTENANCE_FIX_FEATURES_ON_BOOT
+        value: 'false'
     healthCheckPath: /api
 
   # Frontend (Next.js)
@@ -29,18 +51,19 @@ services:
     region: frankfurt
     plan: free
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm run start
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: NEXT_PUBLIC_API_URL
         value: https://ra7ba-backend.onrender.com/api
       - key: NEXT_PUBLIC_APP_NAME
         value: Ra7ba
-      - key: NEXT_PUBLIC_APP_DOMAIN
-        value: ra7ba-frontend.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://tirfsghvgyaubcqwsliq.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
 
-# No databases needed - using Supabase
+# No Render DB needed - using Supabase

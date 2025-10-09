@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { PaymentStatus, SubscriptionStatus, TenantStatus } from '@prisma/client';
+import { PaymentStatus, SubscriptionStatus, TenantStatus } from '../../shims/prisma-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 

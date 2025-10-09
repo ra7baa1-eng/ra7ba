@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MerchantService } from './merchant.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '@/common/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/shims/prisma-client';
 import { CurrentUser } from '@/common/decorators/tenant.decorator';
 
 @ApiTags('merchant')

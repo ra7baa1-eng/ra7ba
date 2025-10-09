@@ -12,7 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '@/common/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/shims/prisma-client';
 import { CurrentUser, TenantId } from '@/common/decorators/tenant.decorator';
 
 @ApiTags('orders')

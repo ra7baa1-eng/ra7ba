@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { Prisma, UserRole } from '@prisma/client';
+import { UserRole } from '@/shims/prisma-client';
 
 @Injectable()
 export class AuthService {
@@ -122,35 +122,33 @@ export class AuthService {
     } catch (err: any) {
       // Add strong logging to pinpoint root cause on Render
       // eslint-disable-next-line no-console
-      console.error('RegisterMerchant failed:', {
         message: err?.message,
         code: err?.code,
         meta: err?.meta,
       });
 
-      // Map common Prisma errors to user-friendly HTTP errors
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === 'P2002') {
-          // Unique constraint failed
-          const target = (err.meta && (err.meta as any).target) || [];
-          if (Array.isArray(target) && target.includes('email')) {
-            throw new ConflictException('Email already exists');
-          }
-          if (Array.isArray(target) && target.includes('subdomain')) {
-            throw new ConflictException('Subdomain already taken');
-          }
-          throw new ConflictException('Duplicate value');
+      // Map common DB errors (Prisma codes if present) to user-friendly HTTP errors
+      const code = (err && (err.code as string)) || '';
+      if (code === 'P2002') {
+        // Unique constraint failed
+        const target = (err.meta && (err.meta as any).target) || [];
+        if (Array.isArray(target) && target.includes('email')) {
+          throw new ConflictException('Email already exists');
         }
-        if (err.code === 'P2003') {
-          // Foreign key constraint failed
-          throw new BadRequestException('Invalid reference data');
+        if (Array.isArray(target) && target.includes('subdomain')) {
+          throw new ConflictException('Subdomain already taken');
         }
+        throw new ConflictException('Duplicate value');
+      }
+      if (code === 'P2003') {
+        // Foreign key constraint failed
+        throw new BadRequestException('Invalid reference data');
       }
 
       // Fallback
       throw new InternalServerErrorException('Registration failed');
     }
-  }
+{{ ... }}
 
   // Login
   async login(email: string, password: string) {

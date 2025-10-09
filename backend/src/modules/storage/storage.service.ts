@@ -12,15 +12,23 @@ export class StorageService {
   private localStoragePath: string;
 
   constructor(private config: ConfigService) {
-    const supabaseUrl = this.config.get('SUPABASE_URL');
-    const supabaseKey = this.config.get('SUPABASE_KEY');
+    const driver = (this.config.get<string>('STORAGE_DRIVER') || 'local').toLowerCase();
+    if (driver === 'supabase') {
+      const supabaseUrl = this.config.get<string>('SUPABASE_URL');
+      const serviceKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (supabaseUrl && supabaseKey) {
-      this.supabase = createClient(supabaseUrl, supabaseKey);
+      if (!supabaseUrl || !serviceKey) {
+        throw new Error('Supabase storage selected but SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing');
+      }
+
+      this.supabase = createClient(supabaseUrl, serviceKey);
+      this.useLocal = false;
     } else {
+      // Local storage mode
       this.useLocal = true;
-      this.localStoragePath = path.join(process.cwd(), 'uploads');
-      
+      const defaultPath = path.join(process.cwd(), 'uploads');
+      this.localStoragePath = this.config.get<string>('STORAGE_LOCAL_PATH') || defaultPath;
+
       // Create uploads directory if it doesn't exist
       if (!fs.existsSync(this.localStoragePath)) {
         fs.mkdirSync(this.localStoragePath, { recursive: true });
@@ -46,7 +54,7 @@ export class StorageService {
       throw new Error('Supabase client not initialized');
     }
 
-    const bucket = this.config.get('SUPABASE_BUCKET', 'rahba-storage');
+    const bucket = this.getBucketForFolder(folder);
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
 
     const { data, error } = await this.supabase.storage
@@ -83,6 +91,7 @@ export class StorageService {
     fs.writeFileSync(filePath, file.buffer);
 
     // Return URL path (will be served by express.static)
+    // We expose local storage under /uploads regardless of physical STORAGE_LOCAL_PATH
     return `/uploads/${folder}/${fileName}`;
   }
 
@@ -98,15 +107,21 @@ export class StorageService {
       throw new Error('Supabase client not initialized');
     }
 
-    const bucket = this.config.get('SUPABASE_BUCKET', 'rahba-storage');
-    
-    // Extract file path from URL
-    const urlParts = fileUrl.split('/');
-    const fileName = urlParts.slice(-2).join('/'); // folder/filename
+    // Try to detect bucket from URL path `/object/public/<bucket>/<path>` or `/object/sign/<bucket>/<path>`
+    const match = fileUrl.match(/\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+    let bucket = 'product-images';
+    let objectPath = '';
+    if (match) {
+      bucket = match[1];
+      objectPath = match[2];
+    } else {
+      // Fallback: assume path contains /uploads/<folder>/<file> not applicable to Supabase
+      return;
+    }
 
     const { error } = await this.supabase.storage
       .from(bucket)
-      .remove([fileName]);
+      .remove([objectPath]);
 
     if (error) {
       console.error('Delete failed:', error);
@@ -114,10 +129,19 @@ export class StorageService {
   }
 
   private async deleteLocal(fileUrl: string): Promise<void> {
-    const filePath = path.join(process.cwd(), fileUrl);
+    // fileUrl is like /uploads/<folder>/<filename>
+    const relative = fileUrl.replace(/^\/?uploads\//, '');
+    const filePath = path.join(this.localStoragePath, relative);
     
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
+  }
+
+  private getBucketForFolder(folder: string): string {
+    const f = (folder || '').toLowerCase();
+    if (f.includes('payment')) return 'payment-proofs';
+    if (f.includes('logo')) return 'tenant-logos';
+    return 'product-images';
   }
 }

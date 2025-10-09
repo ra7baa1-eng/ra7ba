@@ -66,8 +66,11 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   // Serve local uploads directory (for StorageService local mode)
-  const uploadsPath = path.join(process.cwd(), 'uploads');
-  app.use('/uploads', express.static(uploadsPath));
+  const storageDriver = process.env.STORAGE_DRIVER || 'local';
+  if (storageDriver === 'local') {
+    const uploadsPath = process.env.STORAGE_LOCAL_PATH || path.join(process.cwd(), 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
+  }
 
   // Run maintenance tasks on boot if flag is set
   if (process.env.MAINTENANCE_FIX_FEATURES_ON_BOOT === 'true') {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { YalidineService } from './providers/yalidine.service';
 import { ZrExpressService } from './providers/zr-express.service';
 import { JetExpressService } from './providers/jet-express.service';
-import { DeliveryCompany } from '@prisma/client';
+import { DeliveryCompany } from '@/shims/prisma-client';
 
 @Injectable()
 export class DeliveryService {

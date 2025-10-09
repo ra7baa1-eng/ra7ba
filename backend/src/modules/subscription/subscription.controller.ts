@@ -11,7 +11,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagg
 import { SubscriptionService } from './subscription.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '@/common/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/shims/prisma-client';
 import { CurrentUser } from '@/common/decorators/tenant.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 
