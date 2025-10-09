@@ -9,14 +9,17 @@ on conflict (id) do nothing;
 
 -- Storage policies
 -- Allow public read for product images and tenant logos
-create policy if not exists product_images_public_read
+drop policy if exists product_images_public_read on storage.objects;
+create policy product_images_public_read
 on storage.objects for select using (bucket_id = 'product-images');
 
-create policy if not exists tenant_logos_public_read
+drop policy if exists tenant_logos_public_read on storage.objects;
+create policy tenant_logos_public_read
 on storage.objects for select using (bucket_id = 'tenant-logos');
 
 -- Allow authenticated users to read their tenant files (generic)
-create policy if not exists objects_auth_read_membership
+drop policy if exists objects_auth_read_membership on storage.objects;
+create policy objects_auth_read_membership
 on storage.objects for select to authenticated using (
   exists (
     select 1 from public.tenant_members tm
@@ -29,7 +32,8 @@ on storage.objects for select to authenticated using (
 );
 
 -- Allow writes for tenant members to their own prefix
-create policy if not exists objects_auth_write_membership
+drop policy if exists objects_auth_write_membership on storage.objects;
+create policy objects_auth_write_membership
 on storage.objects for insert to authenticated with check (
   exists (
     select 1 from public.tenant_members tm
@@ -40,7 +44,8 @@ on storage.objects for insert to authenticated with check (
   )
 );
 
-create policy if not exists objects_auth_update_membership
+drop policy if exists objects_auth_update_membership on storage.objects;
+create policy objects_auth_update_membership
 on storage.objects for update to authenticated using (
   exists (
     select 1 from public.tenant_members tm
@@ -59,7 +64,8 @@ on storage.objects for update to authenticated using (
   )
 );
 
-create policy if not exists objects_auth_delete_membership
+drop policy if exists objects_auth_delete_membership on storage.objects;
+create policy objects_auth_delete_membership
 on storage.objects for delete to authenticated using (
   exists (
     select 1 from public.tenant_members tm
