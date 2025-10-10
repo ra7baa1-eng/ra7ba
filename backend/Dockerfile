@@ -4,16 +4,20 @@ FROM node:18-alpine
 # Install necessary dependencies for Prisma
 RUN apk add --no-cache openssl libc6-compat curl
 
+# Environment
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max-old-space-size=512
+
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy source code
-COPY . .
+COPY backend/ ./
 
 # Skip Prisma generation (no schema; using Supabase + Prisma stubs)
 
