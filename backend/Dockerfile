@@ -2,7 +2,7 @@
 FROM node:18-alpine
 
 # Install necessary dependencies for Prisma
-RUN apk add --no-cache openssl libc6-compat
+RUN apk add --no-cache openssl libc6-compat curl
 
 WORKDIR /app
 
@@ -12,18 +12,16 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code and prisma schema
+# Copy source code
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Skip Prisma generation (no schema; using Supabase + Prisma stubs)
 
 # Build application
 RUN npm run build
 
-# Clean up dev dependencies but keep prisma
+# Clean up dev dependencies
 RUN npm prune --production
-RUN npm install prisma @prisma/client
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
