@@ -101,7 +101,7 @@ async function bootstrap() {
   🚀 Rahba Backend is running!
   📡 API: http://localhost:${port}/api
   📚 Docs: http://localhost:${port}/api/docs
-  🇩🇿 Made for Algeria with ❤️
+  🇩🇿 صنع من طرف gribo abdo ❤️ ❤️
   `);
 }
 
