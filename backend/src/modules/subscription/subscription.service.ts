@@ -133,6 +133,7 @@ export class SubscriptionService {
     // Create payment record
     const payment = await this.prisma.payment.create({
       data: {
+        tenantId,
         subscriptionId: subscription.id,
         amount,
         baridimobRef: data.baridimobRef,
