@@ -42,6 +42,7 @@ ENV NODE_OPTIONS="--max-old-space-size=512"
 
 # نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
+...
 
 # نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
