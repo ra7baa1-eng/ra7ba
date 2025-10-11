@@ -125,7 +125,7 @@ model Tenant {
   products    Product[]
   orders      Order[]
   categories  Category[]
-  
+  payments    Payment[]  
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   
