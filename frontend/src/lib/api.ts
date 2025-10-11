@@ -4,9 +4,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ra7ba.onrender.com/a
 
 export const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add auth token to requests
@@ -183,8 +180,10 @@ export const subscriptionApi = {
   getCurrent: () =>
     api.get('/subscription/current'),
   
-  submitPayment: (data: any) =>
-    api.post('/subscription/payment/submit', data),
+  submitPayment: (data: FormData) =>
+    api.post('/subscription/payment/submit', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   
   getPaymentHistory: () =>
     api.get('/subscription/payments/history'),
