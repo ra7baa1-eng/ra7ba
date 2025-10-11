@@ -27,7 +27,7 @@
     "db:emergency": "node emergency-fix.js",
     "db:features": "node fix-features.js",
     "admin:create": "node create-admin.js"
-},
+  },
   "dependencies": {
     "@nestjs/cli": "^10.3.0",
     "@nestjs/common": "^10.3.0",
