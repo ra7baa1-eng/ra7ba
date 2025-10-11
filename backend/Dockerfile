@@ -1,54 +1,58 @@
-# Builder stage
-FROM node:18-alpine AS builder
+# ========================
+# 1) Build stage
+# ========================
+FROM node:20-alpine AS builder
 
-# Install build dependencies
+# أدوات لازمة لتشغيل Prisma engine
 RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 
-# Increase Node memory limit during build on low-RAM instances
+# رفع حد الذاكرة أثناء البناء (مفيد على بيئات RAM منخفضة)
 ENV NODE_OPTIONS=--max-old-space-size=512
 
-# Copy package files and install deps
+# تثبيت التبعيات (تستخدم package-lock.json لنفس الإصدارات)
 COPY backend/package*.json ./
 RUN npm ci
 
-# Copy source and build
+# نسخ كود المصدر وملفات Prisma
 COPY backend/ ./
-# Skip Prisma generation (no schema; using Supabase + Prisma stubs)
+RUN npx prisma generate
+
+# بناء NestJS
 RUN npm run build
-# Prune dev dependencies to keep only production deps in node_modules
-RUN npm prune --production
 
-# Runtime stage
-FROM node:18-alpine
+# حذف تبعيات التطوير والإبقاء على تبعيات الإنتاج فقط
+RUN npm prune --omit=dev
 
-# Install runtime tools (curl for healthcheck)
-RUN apk add --no-cache curl
+# ========================
+# 2) Runtime stage
+# ========================
+FROM node:20-alpine
 
-# Environment
-ENV NODE_ENV=production
-ENV NODE_OPTIONS=--max-old-space-size=512
+# أدوات لازمة + curl للـ Healthcheck
+RUN apk add --no-cache openssl libc6-compat curl
 
 WORKDIR /app
 
-# Copy production artifacts
+ENV NODE_ENV=production
+# رفع حد الذاكرة في التشغيل أيضاً
+ENV NODE_OPTIONS=--max-old-space-size=512
+
+# نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+# Install Prisma CLI at runtime for automatic migrations
+RUN npm install --no-save prisma
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs \
-  && adduser -S nestjs -u 1001 \
-  && chown -R nestjs:nodejs /app
-USER nestjs
-
-# Expose port (Render/Koyeb uses PORT env variable)
+# المنفذ الافتراضي في التطبيق Nest هو 10000 (أو PORT من البيئة)
 EXPOSE 10000
 
-# Health check
+# Healthcheck على /api
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:${PORT:-10000}/api || exit 1
 
-# Start application
-CMD ["npm", "run", "start:prod"]
+# شغّل التطبيق (يفضّل أن يكون start:prod = "node --max-old-space-size=512 dist/main" في package.json)
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
