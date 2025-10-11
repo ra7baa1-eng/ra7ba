@@ -26,7 +26,7 @@
     "db:fix": "node fix-database.js",
     "db:emergency": "node emergency-fix.js",
     "db:features": "node fix-features.js",
-    "admin:create": "node create-admin.js"
+    "admin:create": "node create-admin.js",
  }
 
   "dependencies": {
