@@ -73,7 +73,7 @@ export default function MerchantSubscription() {
     e.preventDefault();
 
     if (!paymentData.payerEmail.trim()) {
-      alert('يرجى إدخال البريد الإلكتروني المرتبط بالدفع');
+      alert('يرجى إدخال البريد الإلكتروني الخاص بالمتجر');
       return;
     }
 
@@ -112,7 +112,7 @@ export default function MerchantSubscription() {
 
       await subscriptionApi.submitPayment(formData);
       
-      alert('تم إرسال طلب الدفع بنجاح! سيتم مراجعته خلال 24 ساعة.');
+      alert('تم إرسال طلب الدفع بنجاح! سيتم مراجعته بين نصف ساعة إلى ساعة.');
       setShowPaymentModal(false);
       setPaymentData({ payerEmail: '', paymentProof: '', proofFile: null });
       loadData();
@@ -278,7 +278,7 @@ export default function MerchantSubscription() {
               <h3 className="font-bold text-blue-900 mb-2">طريقة الدفع - BaridiMob 📱</h3>
               <ol className="text-sm text-blue-800 space-y-1">
                 <li>1. افتح تطبيق BaridiMob</li>
-                <li>2. أرسل المبلغ إلى: <strong>0550123456</strong></li>
+                <li>2. أرسل المبلغ إلى: <strong>00799999002619174321</strong></li>
                 <li>3. التقط صورة (لقطة شاشة) لتأكيد الدفع</li>
                 <li>4. ارفع الصورة أدناه</li>
               </ol>
