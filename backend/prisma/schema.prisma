@@ -166,6 +166,7 @@ model Payment {
   
   amount          Decimal        @db.Decimal(10, 2)
   currency        String         @default("DZD")
+  plan            SubscriptionPlan
 
   // BaridiMob details
   baridimobRef    String?
