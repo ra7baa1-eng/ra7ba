@@ -138,6 +138,7 @@ export class SubscriptionService {
         amount,
         baridimobRef: data.baridimobRef,
         payerEmail: data.payerEmail.trim(),
+        plan: normalizedPlan as SubscriptionPlan,
         paymentProof: proofUrl,
         status: PaymentStatus.PENDING,
       },
