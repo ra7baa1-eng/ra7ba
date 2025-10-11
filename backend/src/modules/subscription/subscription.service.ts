@@ -108,7 +108,7 @@ export class SubscriptionService {
 
     // Normalize plan value
     const normalizedPlan = typeof data.plan === 'string'
-      ? data.plan.toUpperCase()
+      ? (data.plan.toUpperCase() as SubscriptionPlan)
       : data.plan;
     if (!Object.values(SubscriptionPlan).includes(normalizedPlan as SubscriptionPlan)) {
       throw new BadRequestException('Invalid subscription plan');
@@ -133,7 +133,7 @@ export class SubscriptionService {
     // Create payment record
     const payment = await this.prisma.payment.create({
       data: {
-        tenantId,
+        tenant: { connect: { id: tenantId } },
         subscriptionId: subscription.id,
         amount,
         baridimobRef: data.baridimobRef,
