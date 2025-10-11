@@ -134,7 +134,7 @@ export class SubscriptionService {
     const payment = await this.prisma.payment.create({
       data: {
         tenant: { connect: { id: tenantId } },
-        subscriptionId: subscription.id,
+        subscription: { connect: { id: subscription.id } },
         amount,
         baridimobRef: data.baridimobRef,
         payerEmail: data.payerEmail.trim(),
