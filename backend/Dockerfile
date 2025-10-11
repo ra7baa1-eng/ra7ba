@@ -37,7 +37,12 @@ RUN apk add --no-cache openssl libc6-compat curl
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV NODE_OPTIONS=--max-old-space-size=512       # حدّ الذاكرة في التشغيل
+# حدّ الذاكرة فى وقت التشغيل
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
+# نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
+COPY --from=builder /app/package*.json ./
+...
 
 # نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
