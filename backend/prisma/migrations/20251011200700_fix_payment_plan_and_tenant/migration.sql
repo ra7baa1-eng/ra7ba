@@ -1,13 +1,24 @@
 -- Idempotent migration to fix Payment model and enum
--- 1) Ensure enum value PRO exists on SubscriptionPlan
+-- 0) Ensure enum type exists (case-sensitive name)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_enum
-    WHERE enumlabel = 'PRO'
-      AND enumtypid = 'SubscriptionPlan'::regtype
-  ) THEN
-    ALTER TYPE "SubscriptionPlan" ADD VALUE 'PRO';
+  IF to_regtype('public."SubscriptionPlan"') IS NULL THEN
+    CREATE TYPE "SubscriptionPlan" AS ENUM ('STANDARD', 'PRO');
+  END IF;
+END $$;
+
+-- 1) Ensure enum value PRO exists on SubscriptionPlan
+DO $$
+DECLARE t regtype := to_regtype('public."SubscriptionPlan"');
+BEGIN
+  IF t IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_enum
+      WHERE enumlabel = 'PRO'
+        AND enumtypid = t
+    ) THEN
+      EXECUTE 'ALTER TYPE "SubscriptionPlan" ADD VALUE ''PRO''';
+    END IF;
   END IF;
 END $$;
 
