@@ -8,13 +8,8 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-
-    // ✅ أهم شيء: تطبيق المهاجرات تلقائياً بعد كل نشر في Koyeb
     "postinstall": "npx prisma migrate deploy",
-
-    // ✅ عند التشغيل، توليد Prisma Client قبل بدء السيرفر
     "start": "npx prisma generate && nest start",
-
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node --max-old-space-size=512 dist/main",
@@ -32,7 +27,9 @@
     "db:emergency": "node emergency-fix.js",
     "db:features": "node fix-features.js",
     "admin:create": "node create-admin.js"
-  },
+  }
+}
+
   "dependencies": {
     "@nestjs/cli": "^10.3.0",
     "@nestjs/common": "^10.3.0",
