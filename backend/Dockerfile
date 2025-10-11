@@ -15,6 +15,7 @@ ENV NODE_OPTIONS=--max-old-space-size=512
 COPY backend/package*.json ./
 # نحتاج لملفات Prisma أثناء postinstall
 COPY backend/prisma ./prisma
+COPY backend/scripts ./scripts
 RUN npm ci
 
 # نسخ كود المصدر وملفات Prisma
