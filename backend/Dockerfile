@@ -44,6 +44,8 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+# Install Prisma CLI at runtime for automatic migrations
+RUN npm install --no-save prisma
 
 # المنفذ الافتراضي في التطبيق Nest هو 10000 (أو PORT من البيئة)
 EXPOSE 10000
@@ -53,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:${PORT:-10000}/api || exit 1
 
 # شغّل التطبيق (يفضّل أن يكون start:prod = "node --max-old-space-size=512 dist/main" في package.json)
-CMD ["npm", "run", "start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
