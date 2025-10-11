@@ -37,12 +37,7 @@ RUN apk add --no-cache openssl libc6-compat curl
 WORKDIR /app
 
 ENV NODE_ENV=production
-# حدّ الذاكرة فى وقت التشغيل
 ENV NODE_OPTIONS="--max-old-space-size=512"
-
-# نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
-COPY --from=builder /app/package*.json ./
-...
 
 # نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
@@ -53,11 +48,8 @@ COPY --from=builder /app/prisma ./prisma
 # تثبيت Prisma CLI لتطبيق الـ migrations تلقائياً
 RUN npm install --no-save prisma
 
-EXPOSE 10000   # المنفذ الافتراضي في Nest (يمكن تغييره بـ PORT)
-
-# Health-check على /api
+EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:${PORT:-10000}/api || exit 1
 
-# شغّل التطبيق (يطّبق migrations ثم يبدأ الخادم)
 CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
