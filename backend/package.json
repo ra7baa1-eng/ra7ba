@@ -29,7 +29,6 @@
     "admin:create": "node create-admin.js"
   }
 }
-
   "dependencies": {
     "@nestjs/cli": "^10.3.0",
     "@nestjs/common": "^10.3.0",
