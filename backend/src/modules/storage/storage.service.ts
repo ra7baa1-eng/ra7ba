@@ -80,7 +80,8 @@ export class StorageService {
     const fileName = `${Date.now()}-${file.originalname}`;
     const filePath = path.join(folderPath, fileName);
 
-    fs.writeFileSync(filePath, file.buffer);
+    const fileBuffer = file.buffer ?? fs.readFileSync(file.path);
+    fs.writeFileSync(filePath, fileBuffer);
 
     // Return URL path (will be served by express.static)
     return `/uploads/${folder}/${fileName}`;
