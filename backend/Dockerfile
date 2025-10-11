@@ -25,38 +25,34 @@ RUN npm run build
 # حذف تبعيات التطوير والإبقاء على تبعيات الإنتاج فقط
 RUN npm prune --omit=dev
 
+
 # ========================
 # 2) Runtime stage
 # ========================
 FROM node:20-alpine
 
-# أدوات لازمة + curl للـ Healthcheck
+# أدوات لازمة + curl للـ Health-check
 RUN apk add --no-cache openssl libc6-compat curl
 
 WORKDIR /app
 
 ENV NODE_ENV=production
-# رفع حد الذاكرة في التشغيل أيضاً
-ENV NODE_OPTIONS=--max-old-space-size=512
+ENV NODE_OPTIONS=--max-old-space-size=512       # حدّ الذاكرة في التشغيل
 
 # نسخ تبعيات الإنتاج والـ dist وملفات prisma من مرحلة البناء
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-# Install Prisma CLI at runtime for automatic migrations
+
+# تثبيت Prisma CLI لتطبيق الـ migrations تلقائياً
 RUN npm install --no-save prisma
 
-# المنفذ الافتراضي في التطبيق Nest هو 10000 (أو PORT من البيئة)
-EXPOSE 10000
+EXPOSE 10000   # المنفذ الافتراضي في Nest (يمكن تغييره بـ PORT)
 
-# Healthcheck على /api
+# Health-check على /api
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:${PORT:-10000}/api || exit 1
 
-# شغّل التطبيق (يفضّل أن يكون start:prod = "node --max-old-space-size=512 dist/main" في package.json)
+# شغّل التطبيق (يطّبق migrations ثم يبدأ الخادم)
 CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
->>>>>>> 5d582f9ae8a6d6035f9fa17333cd445d639e748c
-=======
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
->>>>>>> 5d582f9ae8a6d6035f9fa17333cd445d639e748c
