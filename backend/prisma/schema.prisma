@@ -173,7 +173,7 @@ model Payment {
   // BaridiMob details
   baridimobRef String?
   payerEmail   String?
-  paymentProof String // 🔹 تم تعديل الحقل ليصبح إلزاميًا
+  paymentProof String? // Uploaded receipt/screenshot
 
   status          PaymentStatus @default(PENDING)
   approvedBy      String? // Admin ID who approved
