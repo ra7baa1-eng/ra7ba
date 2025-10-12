@@ -469,4 +469,47 @@ END $$;`;
 
     return { message: 'Feature schema fix applied successfully' };
   }
+
+  // Verify that migrations/tables exist (used by GET /admin/tests/migrations)
+  async checkMigrations() {
+    const expectedTables = [
+      'User',
+      'RefreshToken',
+      'Tenant',
+      'Subscription',
+      'Payment',
+      'Category',
+      'Product',
+      'Order',
+      'OrderItem',
+      'Wilaya',
+      'Setting',
+      'ProductOption',
+      'ProductOptionValue',
+      'ProductVariant',
+      'BundleOffer',
+      'PlanFeatureFlags',
+      'Notification',
+      // New SaaS additions
+      'ShipmentProvider',
+      'ShippingOption',
+      'Daira',
+      'Baladiya',
+    ];
+
+    const inList = expectedTables.map((t) => `'${t}'`).join(',');
+    const rows: Array<{ table_name: string }> = await this.prisma.$queryRawUnsafe(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN (${inList});`
+    );
+
+    const found = new Set(rows.map((r) => r.table_name));
+    const missing = expectedTables.filter((t) => !found.has(t));
+
+    return {
+      status: missing.length === 0 ? 'OK' : 'MISSING',
+      missing,
+      found: Array.from(found),
+      checkedAt: new Date().toISOString(),
+    };
+  }
 }

@@ -77,6 +77,9 @@ model User {
   tenantId      String?        @unique
   refreshTokens RefreshToken[]
   orders        Order[]
+  // Back-relations
+  stores        Store[]
+  paymentProofsUploaded PaymentProof[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -465,4 +468,139 @@ model Notification {
 
   @@index([isRead])
   @@index([createdAt])
+}
+
+// ==================== SAAS ADDITIONS (STORE / SHIPPING / PAYMENT PROOF) ====================
+
+enum StoreSubscriptionStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum PaymentProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ShippingType {
+  HOME
+  OFFICE
+  CUSTOM
+}
+
+enum PaymentMethod {
+  COD
+}
+
+// Merchant Store entity (separate from Tenant for SaaS requirements)
+model Store {
+  id                  String                  @id @default(uuid())
+  name                String
+  slug                String                  @unique
+  ownerId             String
+  owner               User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  email               String?
+  phone               String?
+  wilaya              String?
+  daira               String?
+  baladiya            String?
+  logoUrl             String?
+  bannerUrl           String?
+  colors              Json?
+  landingPage         Json?
+  checkoutConfig      Json?
+  subscriptionStatus  StoreSubscriptionStatus @default(PENDING)
+  isActive            Boolean                 @default(true)
+
+  // Relations
+  shippingOptions ShippingOption[]
+  paymentProofs   PaymentProof[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentProof {
+  id            String             @id @default(uuid())
+  storeId       String
+  store         Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  uploadedById  String?
+  uploadedBy    User?              @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  fileUrl       String
+  emailOfStore  String
+  amount        Decimal?           @db.Decimal(10, 2)
+  status        PaymentProofStatus @default(PENDING)
+  adminNote     String?
+  reviewedAt    DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([storeId])
+  @@index([status])
+}
+
+model ShippingOption {
+  id          String          @id @default(uuid())
+  storeId     String?
+  store       Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  name        String
+  type        ShippingType
+  price       Decimal         @db.Decimal(10, 2)
+  minWeight   Decimal?        @db.Decimal(10, 2)
+  maxWeight   Decimal?        @db.Decimal(10, 2)
+  providerId  String?
+  provider    ShipmentProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  credentials Json?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([storeId])
+  @@index([providerId])
+  @@index([isActive])
+}
+
+model ShipmentProvider {
+  id             String           @id @default(uuid())
+  name           String
+  country        String           @default("DZ")
+  token          String?
+  providerId     String?
+  description    String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  shippingOptions ShippingOption[]
+
+  @@index([isActive])
+  @@unique([name])
+}
+
+// Administrative divisions
+model Daira {
+  id         String   @id @default(uuid())
+  wilayaCode String
+  name       String
+  nameAr     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  baladiyas  Baladiya[]
+
+  @@index([wilayaCode])
+  @@unique([wilayaCode, name])
+}
+
+model Baladiya {
+  id        String  @id @default(uuid())
+  dairaId   String
+  daira     Daira   @relation(fields: [dairaId], references: [id], onDelete: Cascade)
+  name      String
+  nameAr    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dairaId])
+  @@unique([dairaId, name])
 }

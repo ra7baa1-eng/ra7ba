@@ -64,6 +64,12 @@ export class AdminController {
     return this.adminService.getPlatformStats();
   }
 
+  @Get('tests/migrations')
+  @ApiOperation({ summary: 'Verify that migrations/tables exist' })
+  async testMigrations() {
+    return this.adminService.checkMigrations();
+  }
+
   @Patch('tenants/:id/suspend')
   @ApiOperation({ summary: 'Suspend tenant' })
   async suspendTenant(

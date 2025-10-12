@@ -137,6 +137,59 @@ async function main() {
 
   console.log('✅ Created default settings');
 
+  // Create initial shipment providers
+  console.log('🚚 Creating shipment providers...');
+  const providers = [
+    { name: 'YALIDINE', description: 'Yalidine Express Algeria', isActive: true },
+    { name: 'ZR_EXPRESS', description: 'ZR Express Algeria', isActive: true },
+    { name: 'JET_EXPRESS', description: 'Jet Express Algeria', isActive: true },
+  ];
+  for (const p of providers) {
+    await prisma.shipmentProvider.upsert({
+      where: { name: p.name },
+      update: { description: p.description, isActive: p.isActive },
+      create: { name: p.name, description: p.description, isActive: p.isActive },
+    });
+  }
+  console.log('✅ Shipment providers seeded');
+
+  // Seed minimal Daira/Baladiya samples for Algiers (16)
+  console.log('🧭 Creating sample daïras and baladiyas...');
+  const dairas = [
+    { wilayaCode: '16', name: 'Dar El Beida', nameAr: 'الدار البيضاء' },
+    { wilayaCode: '16', name: 'Bab El Oued', nameAr: 'باب الواد' },
+  ];
+
+  for (const d of dairas) {
+    const daira = await prisma.daira.upsert({
+      where: { wilayaCode_name: { wilayaCode: d.wilayaCode, name: d.name } },
+      update: { nameAr: d.nameAr },
+      create: d,
+    });
+
+    // Attach a couple of baladiyas to each daira
+    const baladiyas =
+      d.name === 'Dar El Beida'
+        ? [
+            { name: 'Dar El Beida', nameAr: 'الدار البيضاء' },
+            { name: 'El Mohammadia', nameAr: 'المحمدية' },
+            { name: 'Bab Ezzouar', nameAr: 'باب الزوار' },
+          ]
+        : [
+            { name: 'Bab El Oued', nameAr: 'باب الواد' },
+            { name: 'Bologhine', nameAr: 'بولوغين' },
+          ];
+
+    for (const b of baladiyas) {
+      await prisma.baladiya.upsert({
+        where: { dairaId_name: { dairaId: daira.id, name: b.name } },
+        update: { nameAr: b.nameAr },
+        create: { ...b, dairaId: daira.id },
+      });
+    }
+  }
+  console.log('✅ Sample daïras and baladiyas created');
+
   console.log('🎉 Seeding completed!');
 }
 
