@@ -4,6 +4,9 @@
   "description": "Rahba SaaS Multi-Tenant E-commerce Backend",
   "author": "Rahba Team",
   "private": true,
+  "engines": {
+    "node": ">=20 <23"
+  },
   "license": "MIT",
   "scripts": {
     "build": "nest build",
