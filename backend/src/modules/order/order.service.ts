@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { MerchantService } from '../merchant/merchant.service';
 import { OrderStatus } from '@prisma/client';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class OrderService {
   constructor(
     private prisma: PrismaService,
     private merchantService: MerchantService,
+    private notification: NotificationService,
   ) {}
 
   // Create order (Customer checkout)
@@ -102,6 +104,18 @@ export class OrderService {
 
     // Increment order count for trial
     await this.merchantService.incrementOrderCount(tenantId);
+
+    // Notify merchant (and admin) via Telegram if configured
+    try {
+      await this.notification.notifyMerchantNewOrder(tenantId, {
+        orderNumber,
+        total,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+      });
+    } catch (_) {
+      // swallow notification errors
+    }
 
     return order;
   }

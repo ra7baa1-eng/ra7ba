@@ -49,12 +49,29 @@ export class StorageService {
     const bucket = this.config.get('SUPABASE_BUCKET', 'rahba-storage');
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
 
-    const { data, error } = await this.supabase.storage
+    const fileContent = file.buffer ?? fs.readFileSync(file.path);
+
+    let { data, error } = await this.supabase.storage
       .from(bucket)
-      .upload(fileName, file.buffer, {
+      .upload(fileName, fileContent, {
         contentType: file.mimetype,
         upsert: false,
       });
+
+    if (error) {
+      // Try to create bucket and retry once (requires service_role key)
+      try {
+        await this.supabase.storage.createBucket(bucket, { public: true });
+        const retry = await this.supabase.storage
+          .from(bucket)
+          .upload(fileName, fileContent, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+        data = retry.data as any;
+        error = retry.error as any;
+      } catch (_) {}
+    }
 
     if (error) {
       throw new Error(`Upload failed: ${error.message}`);

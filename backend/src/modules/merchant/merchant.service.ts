@@ -98,6 +98,7 @@ export class MerchantService {
       logo?: string;
       banner?: string;
       theme?: any;
+      telegramChatId?: string;
     },
   ) {
     return this.prisma.tenant.update({

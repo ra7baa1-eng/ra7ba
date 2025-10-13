@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { SubscriptionPlan, PaymentStatus } from '@prisma/client';
 import { StorageService } from '../storage/storage.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class SubscriptionService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private notification: NotificationService,
   ) {}
 
   // Get subscription plans
@@ -152,6 +154,15 @@ export class SubscriptionService {
         status: 'PENDING_PAYMENT',
       },
     });
+
+    // Notify admin via Telegram (and DB notification)
+    try {
+      const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
+      await this.notification.notifyNewPayment(tenant?.name || tenantId, amount, normalizedPlan);
+    } catch (e) {
+      // log and continue
+      // console.error('notifyNewPayment failed', e);
+    }
 
     return {
       message: 'Payment submitted successfully. Waiting for admin approval.',

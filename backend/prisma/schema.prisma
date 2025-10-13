@@ -114,6 +114,7 @@ model Tenant {
   banner         String?
   phone          String?
   address        String?
+  telegramChatId String?
   theme          Json? // Store theme customization
   checkoutConfig Json? // Checkout required/optional fields configuration
   status         TenantStatus @default(TRIAL)
