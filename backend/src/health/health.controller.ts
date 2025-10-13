@@ -1,9 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PrismaService } from '@/common/prisma/prisma.service';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
+  constructor(private prisma: PrismaService) {}
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
   @ApiResponse({ status: 200, description: 'Service is healthy' })
@@ -14,7 +16,22 @@ export class HealthController {
       uptime: process.uptime(),
       environment: process.env.NODE_ENV || 'development',
       version: '1.0.0',
-      database: 'connected', // You can add actual DB check here
+      database: 'unknown',
     };
+  }
+
+  @Get('db')
+  @ApiOperation({ summary: 'Database reachability check' })
+  @ApiResponse({ status: 200, description: 'Database reachable' })
+  async checkDb() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return { status: 'ok' };
+    } catch (err: any) {
+      throw new ServiceUnavailableException({
+        code: 'DB_UNREACHABLE',
+        message: err?.message || 'Database unreachable',
+      });
+    }
   }
 }

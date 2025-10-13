@@ -18,6 +18,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     } catch (_) {}
 
+    try {
+      const u = new URL(finalUrl);
+      console.log(`🗄️ Prisma datasource -> host: ${u.hostname}, port: ${u.port || '(default)'}`);
+    } catch {}
+
     super({
       log: ['error', 'warn'],
       datasources: { db: { url: finalUrl } },

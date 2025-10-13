@@ -7,6 +7,7 @@ import { AdminService } from './modules/admin/admin.service';
 import * as express from 'express';
 import * as path from 'path';
 import { exec } from 'child_process';
+import { DbUnavailableInterceptor } from './common/interceptors/db-unavailable.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +34,9 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global DB connectivity interceptor
+  app.useGlobalInterceptors(new DbUnavailableInterceptor());
 
   // Global prefix
   app.setGlobalPrefix('api');
