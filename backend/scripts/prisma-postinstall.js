@@ -15,16 +15,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 try {
-  // Ensure client is generated
   execSync('npx prisma generate', { stdio: 'inherit' });
-
-  // Apply migrations
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-
-  // Optionally run seed (idempotent) when explicitly enabled
-  if (String(process.env.RUN_SEED_ON_DEPLOY).toLowerCase() === 'true') {
-    execSync('npx prisma db seed', { stdio: 'inherit' });
-  }
 } catch (error) {
   process.exit(error.status ?? 1);
 }
