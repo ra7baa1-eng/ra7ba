@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { AdminService } from './modules/admin/admin.service';
 import * as express from 'express';
 import * as path from 'path';
+import { exec } from 'child_process';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,6 +38,12 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Simple health check endpoint
+  app.getHttpAdapter().get('/', (req, res) => {
+    res.status(200).send('OK');
+  });
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+  });
   app.getHttpAdapter().get('/api', (req, res) => {
     res.json({
       status: 'ok',
@@ -81,16 +88,9 @@ async function bootstrap() {
     }
   }
 
-  // Create or reset SUPER_ADMIN on boot if flag is set
+  // Defer SUPER_ADMIN bootstrap to background after migrations
   if (process.env.MAINTENANCE_CREATE_ADMIN_ON_BOOT === 'true') {
-    const adminService = app.get(AdminService);
-    console.log('MAINTENANCE_CREATE_ADMIN_ON_BOOT is true, ensuring SUPER_ADMIN exists...');
-    try {
-      const result = await adminService.createOrResetAdminUser();
-      console.log('✅ Admin bootstrap:', result);
-    } catch (error) {
-      console.error('❌ Error creating/resetting SUPER_ADMIN on boot:', error);
-    }
+    console.log('MAINTENANCE_CREATE_ADMIN_ON_BOOT=true, will bootstrap admin after migrations.');
   }
 
 
@@ -103,6 +103,41 @@ async function bootstrap() {
   📚 Docs: http://localhost:${port}/api/docs
   🇩🇿 صنع من طرف gribo abdo ❤️ ❤️
   `);
+
+  const autoMig = String(process.env.AUTO_MIGRATE_ON_BOOT ?? 'true').toLowerCase() === 'true';
+  if (autoMig) {
+    const run = (cmd: string) => new Promise<void>((resolve, reject) => {
+      exec(cmd, { env: process.env }, (err) => (err ? reject(err) : resolve()));
+    });
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    (async () => {
+      const max = parseInt(process.env.DB_CONNECT_RETRIES || '20', 10);
+      const wait = parseInt(process.env.DB_CONNECT_RETRY_DELAY_MS || '3000', 10);
+      for (let i = 1; i <= max; i++) {
+        try {
+          await run('npx prisma migrate deploy');
+          break;
+        } catch (e) {
+          await delay(wait);
+        }
+      }
+      const autoSeed = String(process.env.AUTO_SEED_ON_BOOT ?? 'true').toLowerCase() === 'true';
+      if (autoSeed) {
+        try {
+          await run('npx prisma db seed');
+        } catch (e) {}
+      }
+      if (process.env.MAINTENANCE_CREATE_ADMIN_ON_BOOT === 'true') {
+        const adminService = app.get(AdminService);
+        try {
+          const result = await adminService.createOrResetAdminUser();
+          console.log('✅ Admin bootstrap (post-migrate):', result);
+        } catch (error) {
+          console.error('❌ Admin bootstrap failed post-migrate:', error);
+        }
+      }
+    })();
+  }
 }
 
 bootstrap();
