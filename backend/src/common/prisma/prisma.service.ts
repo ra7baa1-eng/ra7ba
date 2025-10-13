@@ -24,7 +24,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         if (attempt < maxRetries) {
           await new Promise((res) => setTimeout(res, delayMs));
         } else {
-          throw err;
+          console.error('❌ Could not connect to the database after retries. Continuing to boot.');
+          return;
         }
       }
     }
