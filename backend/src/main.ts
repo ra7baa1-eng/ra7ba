@@ -106,8 +106,23 @@ async function bootstrap() {
 
   const autoMig = String(process.env.AUTO_MIGRATE_ON_BOOT ?? 'true').toLowerCase() === 'true';
   if (autoMig) {
+    const computeDirectUrl = (raw?: string) => {
+      if (!raw) return raw;
+      try {
+        const u = new URL(raw);
+        // Force direct port 5432 with SSL and remove pgbouncer flags
+        u.port = '5432';
+        u.searchParams.delete('pgbouncer');
+        u.searchParams.delete('connection_limit');
+        if (!u.searchParams.get('sslmode')) u.searchParams.set('sslmode', 'require');
+        return u.toString();
+      } catch {
+        return raw;
+      }
+    };
+    const directUrl = computeDirectUrl(process.env.DB_URL_OVERRIDE || process.env.DATABASE_URL);
     const run = (cmd: string) => new Promise<void>((resolve, reject) => {
-      exec(cmd, { env: process.env }, (err) => (err ? reject(err) : resolve()));
+      exec(cmd, { env: { ...process.env, DATABASE_URL: directUrl || process.env.DATABASE_URL } }, (err) => (err ? reject(err) : resolve()));
     });
     const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
     (async () => {
