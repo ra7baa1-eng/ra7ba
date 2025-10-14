@@ -45,7 +45,16 @@ CREATE TABLE IF NOT EXISTS "Baladiya" (
 CREATE INDEX IF NOT EXISTS "Baladiya_dairaId_idx" ON "Baladiya"("dairaId");
 CREATE UNIQUE INDEX IF NOT EXISTS "Baladiya_dairaId_name_key" ON "Baladiya"("dairaId","name");
 
--- FK: Baladiya -> Daira
-ALTER TABLE "Baladiya"
-  ADD CONSTRAINT IF NOT EXISTS "Baladiya_dairaId_fkey"
-  FOREIGN KEY ("dairaId") REFERENCES "Daira"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- FK: Baladiya -> Daira (safe idempotent version)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'Baladiya_dairaId_fkey'
+  ) THEN
+    ALTER TABLE "Baladiya"
+      ADD CONSTRAINT "Baladiya_dairaId_fkey"
+      FOREIGN KEY ("dairaId") REFERENCES "Daira"("id")
+      ON DELETE CASCADE
+      ON UPDATE CASCADE;
+  END IF;
+END $$;
