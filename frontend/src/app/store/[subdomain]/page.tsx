@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { productsApi, ordersApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import LocationSelector from '@/components/LocationSelector';
@@ -89,14 +90,14 @@ export default function StorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-purple-600">
+              <h1 className="text-3xl font-bold text-primary-600">
                 🛍️ {storeInfo?.name || 'متجري'}
               </h1>
               <p className="text-sm text-gray-600">تسوق الآن واستلم في منزلك</p>
             </div>
             <button
               onClick={() => setShowCart(!showCart)}
-              className="relative px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+              className="relative px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               🛒 السلة
               {cartCount > 0 && (
@@ -108,6 +109,29 @@ export default function StorePage() {
           </div>
         </div>
       </header>
+
+      <section className="relative">
+        <div className="h-40 md:h-56 bg-gradient-to-r from-primary-100 to-primary-200">
+          {storeInfo?.bannerUrl && (
+            <img src={storeInfo.bannerUrl} alt="banner" className="w-full h-full object-cover" />
+          )}
+        </div>
+        <div className="container mx-auto px-4">
+          <div className="-mt-10 md:-mt-14 flex items-end gap-4">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden ring-4 ring-white bg-white flex items-center justify-center">
+              {storeInfo?.logoUrl ? (
+                <img src={storeInfo.logoUrl} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl">🛍️</span>
+              )}
+            </div>
+            <div className="pb-2">
+              <div className="text-2xl md:text-3xl font-bold">{storeInfo?.name || 'متجري'}</div>
+              <div className="text-gray-600 text-sm">مرحبا بك في متجرنا</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="container mx-auto px-4 py-8">
         {loading ? (
@@ -124,24 +148,28 @@ export default function StorePage() {
                 key={product.id}
                 className="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden"
               >
-                {product.images?.[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.nameAr}
-                    className="w-full h-56 object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-56 bg-gray-200 flex items-center justify-center text-6xl">
-                    📦
-                  </div>
-                )}
+                <Link href={`/store/${params.subdomain as string}/product/${product.slug}`}>
+                  {product.images?.[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.nameAr}
+                      className="w-full h-56 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-56 bg-gray-200 flex items-center justify-center text-6xl">
+                      📦
+                    </div>
+                  )}
+                </Link>
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-2">{product.nameAr}</h3>
+                  <Link href={`/store/${params.subdomain as string}/product/${product.slug}`} className="block">
+                    <h3 className="font-bold text-lg mb-2 line-clamp-2">{product.nameAr}</h3>
+                  </Link>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {product.descriptionAr}
                   </p>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-primary-600">
                       {formatCurrency(product.price)}
                     </div>
                     {product.stock > 0 ? (
@@ -153,7 +181,7 @@ export default function StorePage() {
                   <button
                     onClick={() => addToCart(product)}
                     disabled={product.stock === 0}
-                    className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {product.stock > 0 ? 'أضف للسلة' : 'نفذ من المخزون'}
                   </button>
@@ -231,33 +259,34 @@ export default function StorePage() {
                   </div>
 
                   <div className="border-t pt-4 mb-4">
-                    <div className="flex justify-between text-xl font-bold">
-                      <span>الإجمالي:</span>
-                      <span className="text-purple-600">{formatCurrency(cartTotal)}</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">+ رسوم التوصيل عند الطلب</p>
+                  <div className="flex justify-between text-xl font-bold">
+                    <span>الإجمالي:</span>
+                    <span className="text-primary-600">{formatCurrency(cartTotal)}</span>
                   </div>
+                  <p className="text-sm text-gray-600 mt-1">+ رسوم التوصيل عند الطلب</p>
+                </div>
 
-                  <button
-                    onClick={() => {
-                      setShowCart(false);
-                      setShowCheckout(true);
-                    }}
-                    className="w-full py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-lg"
-                  >
-                    إتمام الطلب 🚀
-                  </button>
-                </>
-              )}
-            </div>
+                <button
+                  onClick={() => {
+                    setShowCart(false);
+                    setShowCheckout(true);
+                  }}
+                  className="w-full py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-bold text-lg animate-pulse"
+                >
+                  إتمام الطلب 🚀
+                </button>
+              </>
+            )}
           </div>
         </div>
+      </div>
       )}
 
       {/* Checkout Modal */}
       {showCheckout && (
         <CheckoutModal
           cart={cart}
+          subdomain={(params.subdomain as string) || 'demo'}
           onClose={() => setShowCheckout(false)}
           onSuccess={() => {
             setCart([]);
@@ -271,7 +300,8 @@ export default function StorePage() {
   );
 }
 
-function CheckoutModal({ cart, onClose, onSuccess }: any) {
+function CheckoutModal({ cart, subdomain, onClose, onSuccess }: any) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -286,11 +316,24 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would call the checkout API
-    // For now, just simulate success
-    setTimeout(() => {
+    try {
+      const payload = {
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        shippingAddress: formData.shippingAddress,
+        wilaya: formData.wilaya,
+        commune: formData.commune,
+        items: cart.map((it: any) => ({ id: it.id, quantity: it.quantity })),
+        subdomain,
+      };
+      const { data } = await ordersApi.checkout(payload);
       onSuccess();
-    }, 1000);
+      if (data?.orderNumber) {
+        router.push(`/track/${data.orderNumber}`);
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء إرسال الطلب');
+    }
   };
 
   return (
@@ -323,7 +366,7 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
               required
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="أحمد بن علي"
             />
           </div>
@@ -335,7 +378,7 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
               required
               value={formData.customerPhone}
               onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="0555123456"
             />
           </div>
@@ -359,7 +402,7 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
               required
               value={formData.shippingAddress}
               onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}
               placeholder="رقم المنزل، اسم الشارع، الحي..."
             />
@@ -370,7 +413,7 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={2}
               placeholder="أي ملاحظات إضافية..."
             />
@@ -386,7 +429,7 @@ function CheckoutModal({ cart, onClose, onSuccess }: any) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+              className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               تأكيد الطلب 🎉
             </button>

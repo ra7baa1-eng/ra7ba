@@ -1,9 +1,13 @@
 export async function uploadImageToImgBB(file: File): Promise<string> {
-  // Backward-compatible name, but now uploads to our backend storage endpoint (Supabase or local)
   const formData = new FormData();
   formData.append('file', file);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const useMock = process.env.NEXT_PUBLIC_USE_MOCK === '1';
+  const baseUrl = useMock
+    ? '/api'
+    : (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== ''
+        ? process.env.NEXT_PUBLIC_API_URL
+        : '/api');
   const url = `${baseUrl}/storage/upload?folder=products`;
 
   // Attach Bearer token from localStorage if present

@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS "Wilaya" (
   CONSTRAINT "Wilaya_pkey" PRIMARY KEY ("id")
 );
 
--- Unique and regular index on code (to mirror prisma behavior: unique + index)
 CREATE UNIQUE INDEX IF NOT EXISTS "Wilaya_code_key" ON "Wilaya"("code");
 CREATE INDEX IF NOT EXISTS "Wilaya_code_idx" ON "Wilaya"("code");
 

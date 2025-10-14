@@ -11,6 +11,13 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // Disable external rewrites entirely when using local Mock API
+    const useMock = process.env.NEXT_PUBLIC_USE_MOCK === '1';
+    if (useMock) {
+      console.log('✅ Using local Mock API routes. External API rewrites are disabled.');
+      return [];
+    }
+
     // Only enable rewrites if API URL is properly configured
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     

@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ra7ba.onrender.com/api';
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === '1';
+// Prefer local Next API when using mock; otherwise use provided API URL, and fallback to local API
+const API_URL = USE_MOCK
+  ? '/api'
+  : (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== ''
+      ? process.env.NEXT_PUBLIC_API_URL
+      : '/api');
 
 export const api = axios.create({
   baseURL: API_URL,
