@@ -103,8 +103,13 @@ export const authApi = {
 
 // Admin API
 export const adminApi = {
-  getTenants: (params?: any) =>
-    api.get('/admin/tenants', { params }),
+  getTenants: (page?: number, limit?: number, status?: string) => {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (status) params.status = status;
+    return api.get('/admin/tenants', { params });
+  },
   
   getPendingPayments: () =>
     api.get('/admin/payments/pending'),
@@ -114,6 +119,12 @@ export const adminApi = {
   
   rejectPayment: (paymentId: string, reason: string) =>
     api.post(`/admin/payments/${paymentId}/reject`, { reason }),
+  
+  suspendTenant: (tenantId: string, reason: string) =>
+    api.patch(`/admin/tenants/${tenantId}/suspend`, { reason }),
+  
+  activateTenant: (tenantId: string) =>
+    api.patch(`/admin/tenants/${tenantId}/activate`),
   
   getStats: () =>
     api.get('/admin/stats'),

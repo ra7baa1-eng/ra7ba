@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
+import { Package, Plus } from 'lucide-react';
 
 export default function MerchantProducts() {
   const router = useRouter();
@@ -163,28 +164,26 @@ export default function MerchantProducts() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="container mx-auto px-4 py-6">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/merchant/dashboard" className="text-gray-600 hover:text-purple-600">
-                ← الرئيسية
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">📦 المنتجات</h1>
-            </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
-            >
-              + إضافة منتج
-            </button>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <Package className="h-8 w-8 text-blue-600" />
+            المنتجات
+          </h1>
+          <p className="text-gray-600 mt-2">إدارة منتجات متجرك</p>
         </div>
-      </header>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
+        >
+          <Plus className="h-5 w-5" />
+          إضافة منتج
+        </button>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div>
         {loading ? (
           <div className="text-center py-12">جاري التحميل...</div>
         ) : products.length === 0 ? (

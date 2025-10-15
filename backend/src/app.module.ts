@@ -7,6 +7,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { MerchantModule } from './modules/merchant/merchant.module';
 import { ProductModule } from './modules/product/product.module';
+import { ProductsModule } from './modules/products/products.module';
 import { OrderModule } from './modules/order/order.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
@@ -37,6 +38,7 @@ import { HealthController } from './health/health.controller';
     AdminModule,
     MerchantModule,
     ProductModule,
+    ProductsModule,
     OrderModule,
     SubscriptionModule,
     DeliveryModule,
