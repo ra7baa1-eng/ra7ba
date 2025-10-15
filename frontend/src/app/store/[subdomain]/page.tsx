@@ -210,12 +210,6 @@ export default function StorePage() {
                   </span>
                 )}
               </Button>
-              <Button
-                className="hidden sm:inline-flex h-11 rounded-xl bg-primary-600 px-6 text-base font-semibold hover:bg-primary-700"
-                onClick={() => router.push('/auth/login')}
-              >
-                إدارة متجري
-              </Button>
             </div>
           </div>
         </div>

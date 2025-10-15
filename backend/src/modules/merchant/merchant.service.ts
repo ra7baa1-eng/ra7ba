@@ -94,11 +94,14 @@ export class MerchantService {
       name?: string;
       nameAr?: string;
       description?: string;
-      // descriptionAr?: string; // Temporarily disabled
+      descriptionAr?: string;
       logo?: string;
       banner?: string;
+      phone?: string;
+      address?: string;
       theme?: any;
       telegramChatId?: string;
+      checkoutConfig?: any;
     },
   ) {
     return this.prisma.tenant.update({

@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '@/common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '@/common/decorators/tenant.decorator';
+import { UpdateStoreSettingsDto } from './dto/update-store-settings.dto';
 
 @ApiTags('merchant')
 @ApiBearerAuth()
@@ -30,7 +31,7 @@ export class MerchantController {
   @ApiOperation({ summary: 'Update store settings' })
   async updateStoreSettings(
     @CurrentUser() user: any,
-    @Body() data: any,
+    @Body() data: UpdateStoreSettingsDto,
   ) {
     return this.merchantService.updateStoreSettings(user.tenant.id, data);
   }

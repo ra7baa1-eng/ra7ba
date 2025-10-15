@@ -1,9 +1,9 @@
 import { Inter } from 'next/font/google';
-import AdminShell from '@/components/admin/AdminShell';
+import MerchantShell from '@/components/merchant/MerchantShell';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export default function AdminLayout({
+export default function MerchantLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ export default function AdminLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className={`${inter.className} bg-gray-50`}>
-        <AdminShell>{children}</AdminShell>
+        <MerchantShell>{children}</MerchantShell>
       </body>
     </html>
   );
