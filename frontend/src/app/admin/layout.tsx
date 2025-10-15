@@ -1,5 +1,4 @@
 import { Inter } from 'next/font/google';
-import './admin.css';
 import Sidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 

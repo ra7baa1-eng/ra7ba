@@ -1,4 +1,4 @@
-import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Bell, Search, User } from 'lucide-react';
 
 export default function AdminHeader() {
   return (
@@ -17,13 +17,13 @@ export default function AdminHeader() {
                 className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <span className="sr-only">عرض الإشعارات</span>
-                <BellIcon className="h-6 w-6" aria-hidden="true" />
+                <Bell className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
             <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
               <div className="relative mx-4">
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  <Search className="h-4 w-4 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
                   id="search"
@@ -44,8 +44,8 @@ export default function AdminHeader() {
                       aria-haspopup="true"
                     >
                       <span className="sr-only">فتح قائمة المستخدم</span>
-                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
-                        أ
+                      <div className="h-9 w-9 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                        <User className="h-5 w-5" aria-hidden="true" />
                       </div>
                     </button>
                   </div>

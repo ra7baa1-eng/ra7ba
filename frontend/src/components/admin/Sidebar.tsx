@@ -1,30 +1,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  HomeIcon,
-  UsersIcon,
-  ShoppingBagIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  CogIcon,
-  ArrowRightOnRectangleIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
-  CubeIcon,
-  TicketIcon
-} from '@heroicons/react/24/outline';
+  Home,
+  Store,
+  Package,
+  ShoppingBag,
+  Users,
+  CreditCard,
+  FileText,
+  Ticket,
+  BarChart3,
+  Settings,
+  LogOut,
+} from 'lucide-react';
 
 const navigation = [
-  { name: 'الرئيسية', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'التجار', href: '/admin/merchants', icon: UserGroupIcon },
-  { name: 'المنتجات', href: '/admin/products', icon: CubeIcon },
-  { name: 'الطلبات', href: '/admin/orders', icon: ShoppingBagIcon },
-  { name: 'العملاء', href: '/admin/customers', icon: UsersIcon },
-  { name: 'الاشتراكات', href: '/admin/subscriptions', icon: CreditCardIcon },
-  { name: 'الفواتير', href: '/admin/invoices', icon: DocumentTextIcon },
-  { name: 'الخصومات', href: '/admin/discounts', icon: TicketIcon },
-  { name: 'التقارير', href: '/admin/reports', icon: ChartBarIcon },
-  { name: 'الإعدادات', href: '/admin/settings', icon: CogIcon },
+  { name: 'الرئيسية', href: '/admin/dashboard', icon: Home },
+  { name: 'التجار', href: '/admin/merchants', icon: Store },
+  { name: 'المنتجات', href: '/admin/products', icon: Package },
+  { name: 'الطلبات', href: '/admin/orders', icon: ShoppingBag },
+  { name: 'العملاء', href: '/admin/customers', icon: Users },
+  { name: 'الاشتراكات', href: '/admin/subscriptions', icon: CreditCard },
+  { name: 'الفواتير', href: '/admin/invoices', icon: FileText },
+  { name: 'الخصومات', href: '/admin/discounts', icon: Ticket },
+  { name: 'التقارير', href: '/admin/reports', icon: BarChart3 },
+  { name: 'الإعدادات', href: '/admin/settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -52,7 +52,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <item.icon
-                      className={`mr-3 flex-shrink-0 h-6 w-6 ${
+                      className={`mr-3 flex-shrink-0 h-5 w-5 ${
                         isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                       }`}
                       aria-hidden="true"
@@ -73,7 +73,7 @@ export default function Sidebar() {
                 </p>
                 <button className="text-xs font-medium text-gray-500 group-hover:text-gray-700 flex items-center">
                   <span>تسجيل خروج</span>
-                  <ArrowRightOnRectangleIcon className="mr-1 h-4 w-4" />
+                  <LogOut className="mr-1 h-4 w-4" />
                 </button>
               </div>
             </div>
