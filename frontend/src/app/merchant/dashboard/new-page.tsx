@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { merchantApi } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { 
   ShoppingBag, 
   Users, 
@@ -18,11 +18,23 @@ import {
   LogOut,
   ExternalLink,
   Plus,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+type StatCardProps = {
+  title: string;
+  value: string | number;
+  icon: LucideIcon;
+  trend?: number;
+  trendText?: string;
+  className?: string;
+};
 
 // مكون البطاقة الإحصائية
-const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }) => (
+const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }: StatCardProps) => (
   <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}>
     <div className="flex items-center justify-between">
       <div>
@@ -41,8 +53,16 @@ const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }
   </div>
 );
 
+type QuickActionProps = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  onClick?: () => void;
+  className?: string;
+};
+
 // مكون زر الإجراء السريع
-const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }) => (
+const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }: QuickActionProps) => (
   <button 
     onClick={onClick}
     className={`bg-white rounded-xl p-5 text-right border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all ${className}`}
@@ -102,6 +122,7 @@ export default function MerchantDashboard() {
   const tenant = dashboard?.tenant || {};
   const stats = dashboard?.stats || {};
   const recentOrders = dashboard?.recentOrders || [];
+  const topProducts = stats?.topProducts || [];
   const isTrial = tenant?.status === 'TRIAL';
   const isActive = tenant?.status === 'ACTIVE';
   const isExpired = tenant?.status === 'EXPIRED' || tenant?.status === 'SUSPENDED';
@@ -211,20 +232,157 @@ export default function MerchantDashboard() {
         )}
 
         {/* البطاقات الإحصائية */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <StatCard 
-            title="إجمالي المبيعات" 
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="إجمالي المبيعات"
             value={formatCurrency(stats.totalSales || 0)}
             icon={ShoppingBag}
-            trend={12.5}
+            trend={stats.salesGrowthPercentage ?? 0}
             trendText="عن الشهر الماضي"
           />
-          <StatCard 
-            title="الطلبات الجديدة" 
-            value={stats.newOrders || 0}
+          <StatCard
+            title="الطلبات الجديدة"
+            value={stats.newOrders ?? 0}
             icon={Package}
-            trend={8.3}
+            trend={stats.ordersGrowthPercentage ?? 0}
             trendText="عن الأسبوع الماضي"
           />
-          <StatCard 
-            title=
+          <StatCard
+            title="عدد العملاء"
+            value={stats.customersCount ?? 0}
+            icon={Users}
+            trend={stats.customersGrowthPercentage ?? 0}
+            trendText="تغير شهري"
+          />
+          <StatCard
+            title="إيرادات الاشتراكات"
+            value={formatCurrency(stats.subscriptionRevenue || 0)}
+            icon={CreditCard}
+            trend={stats.subscriptionGrowthPercentage ?? 0}
+            trendText="عن الدورة السابقة"
+          />
+        </div>
+
+        {/* إجراءات سريعة */}
+        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <QuickAction
+            icon={Plus}
+            title="إضافة منتج جديد"
+            description="قم بإضافة منتجك خلال ثوانٍ مع دعم رفع الصور والتصنيفات."
+            onClick={() => setActiveTab('products')}
+          />
+          <QuickAction
+            icon={BarChart2}
+            title="استعراض التقارير"
+            description="تابع أداء المبيعات ومصادر الزيارات في لوحة تقارير متقدمة."
+            onClick={() => setActiveTab('reports')}
+          />
+          <QuickAction
+            icon={Settings}
+            title="تخصيص المتجر"
+            description="قم بتعديل الهوية البصرية وسياسات الشحن وبيانات الاتصال."
+            onClick={() => setActiveTab('settings')}
+          />
+        </div>
+
+        {/* أحدث الطلبات */}
+        <div className="mt-10 rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">أحدث الطلبات</h2>
+            <Link
+              href="/merchant/orders"
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              عرض الكل
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {recentOrders.length === 0 ? (
+            <p className="text-sm text-gray-500">لا توجد طلبات حديثة حالياً.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-right">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الطلب</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">المبلغ</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100 text-sm">
+                  {recentOrders.map((order: any) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-semibold text-gray-900">#{order.orderNumber}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.customerName || 'عميل مجهول'}</td>
+                      <td className="px-4 py-3 text-gray-900">{formatCurrency(order.totalAmount || 0)}</td>
+                      <td className="px-4 py-3 text-gray-500">{order.createdAt ? formatDate(order.createdAt) : 'غير متاح'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            order.status === 'DELIVERED'
+                              ? 'bg-green-100 text-green-700'
+                              : order.status === 'CONFIRMED'
+                              ? 'bg-blue-100 text-blue-700'
+                              : order.status === 'PENDING'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {order.status || 'غير محدد'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* أفضل المنتجات أداءً */}
+        <div className="mt-10 rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">أفضل المنتجات أداءً</h2>
+            <Link
+              href="/merchant/products"
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              إدارة المنتجات
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-gray-500">لم يتم تسجيل منتجات مميزة حتى الآن.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {topProducts.map((product: any) => (
+                <div key={product.id} className="rounded-lg border border-gray-100 p-4 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{product.name}</p>
+                      <p className="text-xs text-gray-500">{formatCurrency(product.totalSales || 0)} مبيعات</p>
+                    </div>
+                    <div className={`flex items-center gap-1 text-xs font-medium ${
+                      (product.change ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {(product.change ?? 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {Math.abs(product.change ?? 0)}%
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                    <span>المخزون: {product.stock ?? 'غير محدد'}</span>
+                    <span>الطلبات: {product.ordersCount ?? 0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

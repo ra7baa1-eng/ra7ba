@@ -20,9 +20,19 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // مكون البطاقة الإحصائية
-const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }) => (
+type StatCardProps = {
+  title: string;
+  value: string | number;
+  icon: LucideIcon;
+  trend?: number;
+  trendText?: string;
+  className?: string;
+};
+
+const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }: StatCardProps) => (
   <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}>
     <div className="flex items-center justify-between">
       <div>
@@ -42,7 +52,15 @@ const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }
 );
 
 // مكون زر الإجراء السريع
-const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }) => (
+type QuickActionProps = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  onClick?: () => void;
+  className?: string;
+};
+
+const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }: QuickActionProps) => (
   <button 
     onClick={onClick}
     className={`bg-white rounded-xl p-5 text-right border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all ${className}`}
