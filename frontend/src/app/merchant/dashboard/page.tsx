@@ -5,6 +5,58 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { merchantApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { 
+  ShoppingBag, 
+  Users, 
+  CreditCard, 
+  Package, 
+  Clock, 
+  AlertCircle,
+  ArrowUpRight,
+  BarChart2,
+  Settings,
+  LogOut,
+  ExternalLink,
+  Plus,
+  RefreshCw
+} from 'lucide-react';
+
+// مكون البطاقة الإحصائية
+const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }) => (
+  <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+        {trend && (
+          <div className={`mt-2 flex items-center text-sm ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% {trendText}
+          </div>
+        )}
+      </div>
+      <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
+        <Icon className="w-6 h-6" />
+      </div>
+    </div>
+  </div>
+);
+
+// مكون زر الإجراء السريع
+const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }) => (
+  <button 
+    onClick={onClick}
+    className={`bg-white rounded-xl p-5 text-right border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all ${className}`}
+  >
+    <div className="flex items-start justify-between mb-2">
+      <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+        <Icon className="w-5 h-5" />
+      </div>
+      <ArrowUpRight className="w-5 h-5 text-gray-400" />
+    </div>
+    <h4 className="font-bold text-gray-900 text-lg mb-1">{title}</h4>
+    <p className="text-sm text-gray-500">{description}</p>
+  </button>
+);
 
 export default function MerchantDashboard() {
   const { user, logout, loading: authLoading } = useAuth();
