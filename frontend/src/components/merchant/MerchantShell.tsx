@@ -3,6 +3,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import MerchantNav from './MerchantNav';
 
 interface Props {
   children: ReactNode;
@@ -28,14 +29,20 @@ export default function MerchantShell({ children }: Props) {
   if (loading || !user || user.role !== 'MERCHANT') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-gray-500">جاري التحقق من الصلاحيات...</div>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {children}
+      <MerchantNav />
+      <main className="lg:pr-64 pt-16 lg:pt-0">
+        {children}
+      </main>
     </div>
   );
 }

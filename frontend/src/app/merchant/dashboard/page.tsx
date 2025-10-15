@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { merchantApi } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { 
   ShoppingBag, 
   Users, 
@@ -18,11 +18,12 @@ import {
   LogOut,
   ExternalLink,
   Plus,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// مكون البطاقة الإحصائية
 type StatCardProps = {
   title: string;
   value: string | number;
@@ -32,6 +33,7 @@ type StatCardProps = {
   className?: string;
 };
 
+// مكون البطاقة الإحصائية
 const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }: StatCardProps) => (
   <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}>
     <div className="flex items-center justify-between">
@@ -51,7 +53,6 @@ const StatCard = ({ title, value, icon: Icon, trend, trendText, className = '' }
   </div>
 );
 
-// مكون زر الإجراء السريع
 type QuickActionProps = {
   icon: LucideIcon;
   title: string;
@@ -60,6 +61,7 @@ type QuickActionProps = {
   className?: string;
 };
 
+// مكون زر الإجراء السريع
 const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }: QuickActionProps) => (
   <button 
     onClick={onClick}
@@ -79,7 +81,9 @@ const QuickAction = ({ icon: Icon, title, description, onClick, className = '' }
 export default function MerchantDashboard() {
   const { user, logout, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -89,13 +93,14 @@ export default function MerchantDashboard() {
 
   const loadDashboard = async () => {
     try {
+      setRefreshing(true);
       const { data } = await merchantApi.getDashboard();
       setDashboard(data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      // Don't redirect immediately - let AuthContext handle it
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -105,249 +110,219 @@ export default function MerchantDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-gray-600">جاري التحميل...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل لوحة التحكم...</p>
+        </div>
       </div>
     );
   }
 
-  const tenant = dashboard?.tenant;
-  const stats = dashboard?.stats;
+  const tenant = dashboard?.tenant || {};
+  const stats = dashboard?.stats || {};
+  const recentOrders = dashboard?.recentOrders || [];
+  const topProducts = stats?.topProducts || [];
   const isTrial = tenant?.status === 'TRIAL';
   const isActive = tenant?.status === 'ACTIVE';
   const isExpired = tenant?.status === 'EXPIRED' || tenant?.status === 'SUSPENDED';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-purple-600">🛍️ {tenant?.name}</h1>
-              {isTrial && (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
-                  تجريبي
-                </span>
-              )}
-              {isExpired && (
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-                  منتهي
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href={tenant?.subdomain ? `/store/${tenant.subdomain}` : '#'}
-                target="_blank"
-                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                عرض المتجر 🔗
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-              >
-                تسجيل الخروج
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Trial/Status Warning */}
+    <div className="container mx-auto px-4 py-6">
+        {/* حالة الاشتراك */}
         {isTrial && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <div className="text-5xl">⏰</div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-blue-900 mb-2">
-                  الفترة التجريبية
-                </h3>
-                <p className="text-blue-700 mb-3">
-                  لديك <strong>{dashboard?.trialDaysLeft || 0}</strong> يوم متبقي في الفترة التجريبية
+          <div className="bg-blue-50 border-r-4 border-blue-500 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="mr-3">
+                <h3 className="text-sm font-medium text-blue-800">فترة تجريبية نشطة</h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  لديك {dashboard?.trialDaysLeft || 0} يوم متبقي في الفترة التجريبية. قم بترقية اشتراكك الآن للاستمرار في استخدام الخدمة.
                 </p>
-                <div className="flex gap-4 text-sm">
-                  <div>📦 المنتجات: <strong>{stats?.productsCount || 0}</strong> / 10</div>
-                  <div>🛒 الطلبات: <strong>{stats?.ordersCount || 0}</strong> / 20</div>
+                <div className="mt-2">
+                  <button className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    ترقية الاشتراك
+                  </button>
                 </div>
-                <Link
-                  href="/merchant/subscription"
-                  className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
-                >
-                  ترقية الآن 🚀
-                </Link>
               </div>
             </div>
           </div>
         )}
 
         {isExpired && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <div className="text-5xl">⚠️</div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-red-900 mb-2">
-                  الاشتراك منتهي
-                </h3>
-                <p className="text-red-700 mb-3">
-                  يرجى تجديد الاشتراك لمواصلة استخدام المتجر
+          <div className="bg-red-50 border-r-4 border-red-500 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="mr-3">
+                <h3 className="text-sm font-medium text-red-800">اشتراك منتهي</h3>
+                <p className="mt-1 text-sm text-red-700">
+                  انتهت صلاحية اشتراكك. يرجى تجديد الاشتراك لاستعادة الوصول الكامل إلى لوحة التحكم.
                 </p>
-                <Link
-                  href="/merchant/subscription"
-                  className="inline-block px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
-                >
-                  تجديد الاشتراك الآن
-                </Link>
+                <div className="mt-2">
+                  <button className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    تجديد الاشتراك
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <Link
-            href="/merchant/products"
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border-2 border-transparent hover:border-purple-200"
-          >
-            <div className="text-4xl mb-3">📦</div>
-            <div className="font-bold text-lg">المنتجات</div>
-            <div className="text-gray-600">إدارة منتجاتك</div>
-          </Link>
-
-          <Link
-            href="/merchant/orders"
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border-2 border-transparent hover:border-purple-200"
-          >
-            <div className="text-4xl mb-3">🛒</div>
-            <div className="font-bold text-lg">الطلبات</div>
-            <div className="text-gray-600">متابعة الطلبات</div>
-          </Link>
-
-          <Link
-            href="/merchant/settings"
-            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border-2 border-transparent hover:border-purple-200"
-          >
-            <div className="text-4xl mb-3">⚙️</div>
-            <div className="font-bold text-lg">الإعدادات</div>
-            <div className="text-gray-600">إعدادات المتجر</div>
-          </Link>
-
-          <Link
-            href="/merchant/subscription"
-            className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-4xl mb-3">💎</div>
-            <div className="font-bold text-lg">الاشتراك</div>
-            <div className="opacity-90">الترقية والفواتير</div>
-          </Link>
+        {/* البطاقات الإحصائية */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="إجمالي المبيعات"
+            value={formatCurrency(stats.totalSales || 0)}
+            icon={ShoppingBag}
+            trend={stats.salesGrowthPercentage ?? 0}
+            trendText="عن الشهر الماضي"
+          />
+          <StatCard
+            title="الطلبات الجديدة"
+            value={stats.newOrders ?? 0}
+            icon={Package}
+            trend={stats.ordersGrowthPercentage ?? 0}
+            trendText="عن الأسبوع الماضي"
+          />
+          <StatCard
+            title="عدد العملاء"
+            value={stats.customersCount ?? 0}
+            icon={Users}
+            trend={stats.customersGrowthPercentage ?? 0}
+            trendText="تغير شهري"
+          />
+          <StatCard
+            title="إيرادات الاشتراكات"
+            value={formatCurrency(stats.subscriptionRevenue || 0)}
+            icon={CreditCard}
+            trend={stats.subscriptionGrowthPercentage ?? 0}
+            trendText="عن الدورة السابقة"
+          />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">إجمالي الطلبات</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {dashboard?.stats?.totalOrders || 0}
-                </p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <span className="text-2xl">📦</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">📊</div>
-              <div className="text-sm text-gray-500">هذا الشهر</div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {formatCurrency(stats?.monthRevenue || 0)}
-            </div>
-            <div className="text-gray-600">إيرادات الشهر</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">🛒</div>
-              <div className="text-sm text-gray-500">الكل</div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats?.ordersCount || 0}
-            </div>
-            <div className="text-gray-600">إجمالي الطلبات</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-3xl">📦</div>
-              <div className="text-sm text-gray-500">الكل</div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats?.productsCount || 0}
-            </div>
-            <div className="text-gray-600">المنتجات</div>
-          </div>
+        {/* إجراءات سريعة */}
+        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <QuickAction
+            icon={Plus}
+            title="إضافة منتج جديد"
+            description="قم بإضافة منتجك خلال ثوانٍ مع دعم رفع الصور والتصنيفات."
+            onClick={() => setActiveTab('products')}
+          />
+          <QuickAction
+            icon={BarChart2}
+            title="استعراض التقارير"
+            description="تابع أداء المبيعات ومصادر الزيارات في لوحة تقارير متقدمة."
+            onClick={() => setActiveTab('reports')}
+          />
+          <QuickAction
+            icon={Settings}
+            title="تخصيص المتجر"
+            description="قم بتعديل الهوية البصرية وسياسات الشحن وبيانات الاتصال."
+            onClick={() => setActiveTab('settings')}
+          />
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">📋 أحدث الطلبات</h2>
+        {/* أحدث الطلبات */}
+        <div className="mt-10 rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">أحدث الطلبات</h2>
             <Link
               href="/merchant/orders"
-              className="text-purple-600 hover:text-purple-700 font-semibold"
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
-              عرض الكل ←
+              عرض الكل
+              <ArrowUpRight className="h-4 w-4" />
             </Link>
           </div>
 
-          {stats?.recentOrders?.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentOrders.map((order: any) => (
-                <div
-                  key={order.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="flex items-center justify-between">
+          {recentOrders.length === 0 ? (
+            <p className="text-sm text-gray-500">لا توجد طلبات حديثة حالياً.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-right">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الطلب</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">المبلغ</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th>
+                    <th className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100 text-sm">
+                  {recentOrders.map((order: any) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-semibold text-gray-900">#{order.orderNumber}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.customerName || 'عميل مجهول'}</td>
+                      <td className="px-4 py-3 text-gray-900">{formatCurrency(order.totalAmount || 0)}</td>
+                      <td className="px-4 py-3 text-gray-500">{order.createdAt ? formatDate(order.createdAt) : 'غير متاح'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            order.status === 'DELIVERED'
+                              ? 'bg-green-100 text-green-700'
+                              : order.status === 'CONFIRMED'
+                              ? 'bg-blue-100 text-blue-700'
+                              : order.status === 'PENDING'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {order.status || 'غير محدد'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* أفضل المنتجات أداءً */}
+        <div className="mt-10 rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">أفضل المنتجات أداءً</h2>
+            <Link
+              href="/merchant/products"
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              إدارة المنتجات
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-gray-500">لم يتم تسجيل منتجات مميزة حتى الآن.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {topProducts.map((product: any) => (
+                <div key={product.id} className="rounded-lg border border-gray-100 p-4 shadow-sm">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-bold">#{order.orderNumber}</div>
-                      <div className="text-sm text-gray-600">{order.customerName}</div>
+                      <p className="text-sm font-semibold text-gray-900">{product.name}</p>
+                      <p className="text-xs text-gray-500">{formatCurrency(product.totalSales || 0)} مبيعات</p>
                     </div>
-                    <div className="text-left">
-                      <div className="font-bold text-purple-600">
-                        {formatCurrency(order.totalAmount)}
-                      </div>
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                          order.status === 'PENDING'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : order.status === 'CONFIRMED'
-                            ? 'bg-blue-100 text-blue-700'
-                            : order.status === 'DELIVERED'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {order.status}
-                      </span>
+                    <div className={`flex items-center gap-1 text-xs font-medium ${
+                      (product.change ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {(product.change ?? 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {Math.abs(product.change ?? 0)}%
                     </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                    <span>المخزون: {product.stock ?? 'غير محدد'}</span>
+                    <span>الطلبات: {product.ordersCount ?? 0}</span>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">📭</div>
-              <p>لا توجد طلبات بعد</p>
-            </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

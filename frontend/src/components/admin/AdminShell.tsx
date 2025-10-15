@@ -2,8 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/admin/Sidebar';
-import AdminHeader from '@/components/admin/AdminHeader';
+import AdminNav from './AdminNav';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Props = {
@@ -29,21 +28,21 @@ export default function AdminShell({ children }: Props) {
 
   if (loading || !user || user.role !== 'SUPER_ADMIN') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-gray-500">جاري التحقق من الصلاحيات...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-300">جاري التحقق من الصلاحيات...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <AdminNav />
+      <main className="lg:pr-64 pt-16 lg:pt-0">
+        {children}
+      </main>
     </div>
   );
 }
