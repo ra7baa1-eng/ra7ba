@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ra7ba.onrender.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://allied-ginnifer-ra7baa-76e2af81.koyeb.app/api';
 
 export const api = axios.create({
   baseURL: API_URL,

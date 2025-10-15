@@ -29,12 +29,8 @@ RUN adduser -S nextjs -u 1001
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
-# Expose port (Render uses PORT env variable)
-EXPOSE 10000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-10000} || exit 1
+# Expose default Next.js port
+EXPOSE 3000
 
 # Start application
 CMD ["npm", "start"]

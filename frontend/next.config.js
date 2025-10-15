@@ -15,16 +15,15 @@ const nextConfig = {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     
     // Check if API URL is valid and not undefined/empty
-    if (!apiUrl || 
-        apiUrl === 'undefined' || 
+    if (!apiUrl ||
+        apiUrl === 'undefined' ||
         apiUrl === 'null' ||
         apiUrl.trim() === '' ||
-        apiUrl === 'https://your-backend-url.onrender.com/api' ||
         apiUrl.includes('your-backend-url')) {
       console.warn('⚠️ NEXT_PUBLIC_API_URL not configured properly, skipping API rewrites');
       console.warn('⚠️ Current value:', apiUrl);
-      console.warn('⚠️ Please set NEXT_PUBLIC_API_URL in Render Environment Variables');
-      console.warn('⚠️ Example: https://your-backend.onrender.com/api');
+      console.warn('⚠️ Please set NEXT_PUBLIC_API_URL in your deployment environment (e.g. Vercel project settings).');
+      console.warn('⚠️ Example: https://your-backend.example.com/api');
       return [];
     }
     

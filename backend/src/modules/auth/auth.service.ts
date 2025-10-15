@@ -120,7 +120,7 @@ export class AuthService {
         ...tokens,
       };
     } catch (err: any) {
-      // Add strong logging to pinpoint root cause on Render
+      // Add strong logging to pinpoint root cause in production
       // eslint-disable-next-line no-console
       console.error('RegisterMerchant failed:', {
         message: err?.message,
