@@ -13,13 +13,16 @@ interface StorefrontSettings {
   favicon?: string;
   storeName?: string;
   storeNameAr?: string;
+  storeSlogan?: string;
   
-  // Colors
+  // Theme & Colors
+  theme?: 'light' | 'dark' | 'auto';
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
   backgroundColor?: string;
   textColor?: string;
+  buttonStyle?: 'rounded' | 'square' | 'pill';
   
   // Banner
   bannerImage?: string;
@@ -27,6 +30,23 @@ interface StorefrontSettings {
   bannerSubtitle?: string;
   bannerButtonText?: string;
   bannerButtonLink?: string;
+  
+  // Pages Customization
+  thankYouPage?: {
+    title?: string;
+    message?: string;
+    showOrderDetails?: boolean;
+    redirectAfterSeconds?: number;
+  };
+  
+  productPage?: {
+    showRelatedProducts?: boolean;
+    showReviews?: boolean;
+    showShareButtons?: boolean;
+  };
+  
+  // Platform Branding
+  hidePlatformBranding?: boolean; // فقط للخطط المدفوعة
   
   // Footer
   footerText?: string;
@@ -58,11 +78,13 @@ interface StorefrontSettings {
 
 export default function StorefrontSettingsPage() {
   const [settings, setSettings] = useState<StorefrontSettings>({
+    theme: 'light',
     primaryColor: '#8B5CF6',
     secondaryColor: '#EC4899',
     accentColor: '#3B82F6',
     backgroundColor: '#FFFFFF',
     textColor: '#1F2937',
+    buttonStyle: 'rounded',
     showFreeShipping: true,
     showWarranty: true,
     showSeasonalOffers: true,
@@ -72,12 +94,25 @@ export default function StorefrontSettingsPage() {
     freeShippingThreshold: 10000,
     customFeatures: [],
     socialLinks: {},
+    hidePlatformBranding: false,
+    thankYouPage: {
+      title: 'شكراً لك!',
+      message: 'تم استلام طلبك بنجاح وسنتواصل معك قريباً',
+      showOrderDetails: true,
+      redirectAfterSeconds: 0,
+    },
+    productPage: {
+      showRelatedProducts: true,
+      showReviews: true,
+      showShareButtons: true,
+    },
   });
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [activeTab, setActiveTab] = useState<'branding' | 'colors' | 'banner' | 'features' | 'social'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'theme' | 'banner' | 'pages' | 'features' | 'social' | 'platform'>('branding');
 
   useEffect(() => {
     fetchSettings();
@@ -88,6 +123,10 @@ export default function StorefrontSettingsPage() {
       const { data } = await merchantApi.getDashboard();
       if (data.tenant?.theme?.storeFeatures) {
         setSettings(data.tenant.theme.storeFeatures);
+      }
+      // Get subscription info
+      if (data.tenant?.subscription) {
+        setSubscription(data.tenant.subscription);
       }
     } catch (error) {
       console.error('Error fetching storefront settings:', error);
@@ -209,15 +248,15 @@ export default function StorefrontSettingsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('colors')}
+                onClick={() => setActiveTab('theme')}
                 className={`px-6 py-4 font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === 'colors'
+                  activeTab === 'theme'
                     ? 'border-purple-600 text-purple-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Palette className="w-5 h-5" />
-                الألوان
+                الثيم والألوان
               </button>
               <button
                 type="button"
@@ -245,6 +284,18 @@ export default function StorefrontSettingsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab('pages')}
+                className={`px-6 py-4 font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'pages'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Eye className="w-5 h-5" />
+                تخصيص الصفحات
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab('social')}
                 className={`px-6 py-4 font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'social'
@@ -254,6 +305,18 @@ export default function StorefrontSettingsPage() {
               >
                 <Globe className="w-5 h-5" />
                 وسائل التواصل
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('platform')}
+                className={`px-6 py-4 font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'platform'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Sparkles className="w-5 h-5" />
+                وسم المنصة
               </button>
             </div>
           </div>
@@ -315,16 +378,110 @@ export default function StorefrontSettingsPage() {
                     />
                   </div>
                 </div>
+
+                {/* Store Slogan */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2">شعار المتجر</label>
+                  <input
+                    type="text"
+                    value={settings.storeSlogan || ''}
+                    onChange={(e) => setSettings(prev => ({ ...prev, storeSlogan: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="أفضل منتجات بأفضل الأسعار"
+                  />
+                </div>
               </div>
             )}
 
-            {/* Colors Tab */}
-            {activeTab === 'colors' && (
+            {/* Theme Tab */}
+            {activeTab === 'theme' && (
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-900">ألوان المتجر</h3>
-                <p className="text-sm text-gray-600">اختر الألوان التي تعكس هوية علامتك التجارية</p>
+                <h3 className="text-xl font-bold text-gray-900">الثيم والألوان</h3>
+                <p className="text-sm text-gray-600">اختر الثيم والألوان التي تعكس هوية علامتك التجارية</p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {/* Theme Selection */}
+                <div>
+                  <label className="block text-sm font-semibold mb-3">نمط الثيم</label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, theme: 'light' }))}
+                      className={`p-4 border-2 rounded-lg transition ${
+                        settings.theme === 'light' 
+                          ? 'border-purple-600 bg-purple-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">☀️</div>
+                        <div className="font-semibold">فاتح</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, theme: 'dark' }))}
+                      className={`p-4 border-2 rounded-lg transition ${
+                        settings.theme === 'dark' 
+                          ? 'border-purple-600 bg-purple-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">🌙</div>
+                        <div className="font-semibold">داكن</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, theme: 'auto' }))}
+                      className={`p-4 border-2 rounded-lg transition ${
+                        settings.theme === 'auto' 
+                          ? 'border-purple-600 bg-purple-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">⚙️</div>
+                        <div className="font-semibold">تلقائي</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Button Style */}
+                <div>
+                  <label className="block text-sm font-semibold mb-3">شكل الأزرار</label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {(['rounded', 'square', 'pill'] as const).map((style) => (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setSettings(prev => ({ ...prev, buttonStyle: style }))}
+                        className={`p-4 border-2 rounded-lg transition ${
+                          settings.buttonStyle === style 
+                            ? 'border-purple-600 bg-purple-50' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className={`h-10 bg-gradient-to-r from-purple-600 to-pink-600 mb-2 ${
+                          style === 'rounded' ? 'rounded-lg' : 
+                          style === 'square' ? '' : 
+                          'rounded-full'
+                        }`}></div>
+                        <div className="font-semibold text-sm">
+                          {style === 'rounded' ? 'مدور' : 
+                           style === 'square' ? 'مربع' : 
+                           'بيضاوي'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Colors */}
+                <div className="border-t pt-6">
+                  <h4 className="font-semibold mb-4">الألوان</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-semibold mb-2">اللون الأساسي</label>
                     <div className="flex gap-2">
@@ -404,6 +561,7 @@ export default function StorefrontSettingsPage() {
                       زر بلون التمييز
                     </button>
                   </div>
+                </div>
                 </div>
               </div>
             )}
@@ -707,6 +865,141 @@ export default function StorefrontSettingsPage() {
               </div>
             )}
 
+            {/* Pages Tab */}
+            {activeTab === 'pages' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-900">تخصيص الصفحات</h3>
+                <p className="text-sm text-gray-600">قم بتخصيص صفحات متجرك حسب احتياجاتك</p>
+
+                {/* Thank You Page */}
+                <div className="border-2 border-gray-200 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    🎉 صفحة الشكر (بعد الطلب)
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">عنوان الصفحة</label>
+                      <input
+                        type="text"
+                        value={settings.thankYouPage?.title || ''}
+                        onChange={(e) => setSettings(prev => ({ 
+                          ...prev, 
+                          thankYouPage: { ...prev.thankYouPage, title: e.target.value }
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="شكراً لك!"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">رسالة الشكر</label>
+                      <textarea
+                        value={settings.thankYouPage?.message || ''}
+                        onChange={(e) => setSettings(prev => ({ 
+                          ...prev, 
+                          thankYouPage: { ...prev.thankYouPage, message: e.target.value }
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        rows={3}
+                        placeholder="تم استلام طلبك بنجاح..."
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">إظهار تفاصيل الطلب</p>
+                        <p className="text-sm text-gray-600">عرض رقم الطلب والمنتجات</p>
+                      </div>
+                      <Switch
+                        checked={settings.thankYouPage?.showOrderDetails ?? true}
+                        onCheckedChange={(checked) =>
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            thankYouPage: { ...prev.thankYouPage, showOrderDetails: checked }
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">إعادة التوجيه التلقائي (بالثواني)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        value={settings.thankYouPage?.redirectAfterSeconds || 0}
+                        onChange={(e) => setSettings(prev => ({ 
+                          ...prev, 
+                          thankYouPage: { ...prev.thankYouPage, redirectAfterSeconds: parseInt(e.target.value) }
+                        }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">0 = بدون إعادة توجيه تلقائي</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Page */}
+                <div className="border-2 border-gray-200 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    📦 صفحة المنتج
+                  </h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">إظهار منتجات مشابهة</p>
+                        <p className="text-sm text-gray-600">عرض منتجات من نفس التصنيف</p>
+                      </div>
+                      <Switch
+                        checked={settings.productPage?.showRelatedProducts ?? true}
+                        onCheckedChange={(checked) =>
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            productPage: { ...prev.productPage, showRelatedProducts: checked }
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">إظهار التقييمات</p>
+                        <p className="text-sm text-gray-600">عرض تقييمات العملاء</p>
+                      </div>
+                      <Switch
+                        checked={settings.productPage?.showReviews ?? true}
+                        onCheckedChange={(checked) =>
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            productPage: { ...prev.productPage, showReviews: checked }
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">أزرار المشاركة</p>
+                        <p className="text-sm text-gray-600">مشاركة المنتج على وسائل التواصل</p>
+                      </div>
+                      <Switch
+                        checked={settings.productPage?.showShareButtons ?? true}
+                        onCheckedChange={(checked) =>
+                          setSettings(prev => ({ 
+                            ...prev, 
+                            productPage: { ...prev.productPage, showShareButtons: checked }
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Social Tab */}
             {activeTab === 'social' && (
               <div className="space-y-6">
@@ -782,6 +1075,92 @@ export default function StorefrontSettingsPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">مثال: 213555123456 (بدون + أو 00)</p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Platform Branding Tab */}
+            {activeTab === 'platform' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-900">وسم المنصة "رحبة"</h3>
+                <p className="text-sm text-gray-600">تحكم في عرض علامة منصة رحبة في متجرك</p>
+
+                {/* Platform Badge Preview */}
+                <div className="border-2 border-purple-200 bg-purple-50 rounded-lg p-6">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold text-sm">
+                      ⚡ Powered by رحبة
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">
+                    هذا هو شكل الوسم الذي يظهر في أسفل متجرك
+                  </p>
+                </div>
+
+                {/* Free Plan Notice */}
+                {(!subscription || subscription.plan === 'free') && (
+                  <div className="border-2 border-blue-200 bg-blue-50 rounded-lg p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="text-3xl">ℹ️</div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-blue-900 mb-2">الخطة المجانية</h4>
+                        <p className="text-sm text-blue-800 mb-3">
+                          أنت حالياً على الخطة المجانية. وسم "رحبة" مطلوب لجميع المتاجر على الخطة المجانية.
+                        </p>
+                        <p className="text-sm text-blue-800 font-semibold">
+                          💡 لإخفاء الوسم، قم بالترقية إلى خطة مدفوعة من صفحة الاشتراكات
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Paid Plan Options */}
+                {subscription && subscription.plan !== 'free' && (
+                  <div className="space-y-4">
+                    <div className="border-2 border-green-200 bg-green-50 rounded-lg p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="text-3xl">✅</div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-green-900 mb-2">خطة {subscription.plan}</h4>
+                          <p className="text-sm text-green-800">
+                            يمكنك الآن إخفاء وسم المنصة واستخدام اسم متجرك الخاص فقط!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+                      <div>
+                        <p className="font-semibold text-gray-900">إخفاء وسم "رحبة"</p>
+                        <p className="text-sm text-gray-600">إظهار اسم متجرك فقط بدون علامة المنصة</p>
+                      </div>
+                      <Switch
+                        checked={settings.hidePlatformBranding ?? false}
+                        onCheckedChange={(checked) =>
+                          setSettings(prev => ({ ...prev, hidePlatformBranding: checked }))
+                        }
+                      />
+                    </div>
+
+                    {settings.hidePlatformBranding && (
+                      <div className="border-2 border-purple-200 bg-purple-50 rounded-lg p-6">
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600 mb-2">معاينة التذييل بدون الوسم:</p>
+                          <div className="text-gray-700 font-medium">
+                            © 2024 {settings.storeNameAr || settings.storeName || 'متجرك'} - جميع الحقوق محفوظة
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Support Message */}
+                <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p className="text-sm text-gray-700 text-center">
+                    💝 شكراً لدعمك! وسم المنصة يساعدنا في النمو وتقديم خدمات أفضل
+                  </p>
                 </div>
               </div>
             )}
