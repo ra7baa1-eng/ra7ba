@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
-import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2 } from 'lucide-react';
+import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2, Heading, Code, AlignLeft, AlignCenter, AlignRight, Underline, Strikethrough, ListOrdered, Quote, Minus, Tag, Percent, Layers } from 'lucide-react';
 
 export default function MerchantProducts() {
   const router = useRouter();
@@ -15,23 +15,27 @@ export default function MerchantProducts() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    nameAr: '',
     description: '',
-    descriptionAr: '',
     price: '',
+    comparePrice: '',
     stock: '',
     sku: '',
     images: [] as string[],
     variants: [] as any[],
     category: '',
     tags: '',
-    weight: '',
-    dimensions: { length: '', width: '', height: '' },
-    seoTitle: '',
-    seoDescription: '',
+    isOffer: false,
+    offerPrice: '',
+    offerEndDate: '',
+    isLandingPage: false,
+    whatsappNumber: '',
+    showWhatsappButton: false,
     isActive: true,
     isFeatured: false,
   });
+  const [categories, setCategories] = useState<string[]>([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -108,17 +112,24 @@ export default function MerchantProducts() {
       const imageUrls = await uploadImages(imageFiles);
       
       const productData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
         price: parseFloat(formData.price),
+        comparePrice: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
         stock: parseInt(formData.stock) || 0,
-        weight: parseFloat(formData.weight) || 0,
+        sku: formData.sku || undefined,
+        category: formData.category || undefined,
         images: imageUrls,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        dimensions: {
-          length: parseFloat(formData.dimensions.length) || 0,
-          width: parseFloat(formData.dimensions.width) || 0,
-          height: parseFloat(formData.dimensions.height) || 0,
-        }
+        variants: formData.variants.length > 0 ? formData.variants : undefined,
+        isOffer: formData.isOffer,
+        offerPrice: formData.isOffer && formData.offerPrice ? parseFloat(formData.offerPrice) : undefined,
+        offerEndDate: formData.isOffer && formData.offerEndDate ? formData.offerEndDate : undefined,
+        isLandingPage: formData.isLandingPage,
+        whatsappNumber: formData.isLandingPage && formData.showWhatsappButton ? formData.whatsappNumber : undefined,
+        showWhatsappButton: formData.isLandingPage ? formData.showWhatsappButton : false,
+        isActive: formData.isActive,
+        isFeatured: formData.isFeatured,
       };
 
       await productsApi.create(productData);
@@ -136,26 +147,49 @@ export default function MerchantProducts() {
     setShowAddModal(false);
     setFormData({
       name: '',
-      nameAr: '',
       description: '',
-      descriptionAr: '',
       price: '',
+      comparePrice: '',
       stock: '',
       sku: '',
       images: [],
       variants: [],
       category: '',
       tags: '',
-      weight: '',
-      dimensions: { length: '', width: '', height: '' },
-      seoTitle: '',
-      seoDescription: '',
+      isOffer: false,
+      offerPrice: '',
+      offerEndDate: '',
+      isLandingPage: false,
+      whatsappNumber: '',
+      showWhatsappButton: false,
       isActive: true,
       isFeatured: false,
     });
     setImageFiles([]);
     setImagePreviews([]);
     setShowVariants(false);
+  };
+
+  const addCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      setCategories(prev => [...prev, newCategory.trim()]);
+      setFormData({ ...formData, category: newCategory.trim() });
+      setNewCategory('');
+      setShowCategoryModal(false);
+    }
+  };
+
+  const insertTextAtCursor = (textarea: HTMLTextAreaElement, before: string, after: string = '') => {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.description || '';
+    const selectedText = text.substring(start, end);
+    const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    setFormData({ ...formData, description: newText });
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+    }, 0);
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -273,68 +307,36 @@ export default function MerchantProducts() {
               </div>
             </div>
 
-            <form onSubmit={handleAddProduct} className="p-6 space-y-4">
-              {/* Name EN */}
+            <form onSubmit={handleAddProduct} className="p-6 space-y-6">
+              {/* Product Name */}
               <div>
-                <label className="block text-sm font-semibold mb-2">
-                  اسم المنتج (English) *
+                <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-purple-600" />
+                  اسم المنتج *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Product Name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                  placeholder="أدخل اسم المنتج بأي لغة تريد"
                 />
               </div>
 
-              {/* Name AR */}
+              {/* Rich Text Description */}
               <div>
                 <label className="block text-sm font-semibold mb-2">
-                  اسم المنتج (عربي) *
+                  الوصف التفصيلي
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.nameAr}
-                  onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="اسم المنتج"
-                />
-              </div>
-
-              {/* Description EN */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  الوصف (English)
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  rows={3}
-                  placeholder="Product description"
-                />
-              </div>
-
-              {/* Description AR - Rich Text */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  الوصف (عربي)
-                </label>
-                <div className="border rounded-lg overflow-hidden">
-                  {/* Toolbar */}
-                  <div className="bg-gray-50 border-b px-3 py-2 flex gap-2">
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  {/* Advanced Toolbar */}
+                  <div className="bg-gray-50 border-b px-3 py-2 flex flex-wrap gap-1">
                     <button
                       type="button"
                       onClick={() => {
-                        const textarea = document.getElementById('descAr') as HTMLTextAreaElement;
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        const text = formData.descriptionAr || '';
-                        const newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
-                        setFormData({ ...formData, descriptionAr: newText });
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '**', '**');
                       }}
                       className="p-2 hover:bg-gray-200 rounded transition"
                       title="عريض"
@@ -344,12 +346,8 @@ export default function MerchantProducts() {
                     <button
                       type="button"
                       onClick={() => {
-                        const textarea = document.getElementById('descAr') as HTMLTextAreaElement;
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        const text = formData.descriptionAr || '';
-                        const newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
-                        setFormData({ ...formData, descriptionAr: newText });
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '*', '*');
                       }}
                       className="p-2 hover:bg-gray-200 rounded transition"
                       title="مائل"
@@ -359,21 +357,110 @@ export default function MerchantProducts() {
                     <button
                       type="button"
                       onClick={() => {
-                        const text = formData.descriptionAr || '';
-                        setFormData({ ...formData, descriptionAr: text + '\n• ' });
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '__', '__');
                       }}
                       className="p-2 hover:bg-gray-200 rounded transition"
-                      title="قائمة"
+                      title="تسطير"
+                    >
+                      <Underline className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '~~', '~~');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="يتوسطه خط"
+                    >
+                      <Strikethrough className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-6 bg-gray-300 mx-1"></div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '# ', '');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="عنوان"
+                    >
+                      <Heading className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '\n• ', '');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="قائمة نقطية"
                     >
                       <List className="w-4 h-4" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '\n1. ', '');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="قائمة مرقمة"
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '> ', '');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="اقتباس"
+                    >
+                      <Quote className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '---\n', '');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="خط فاصل"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '[', '](url)');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="رابط"
+                    >
+                      <Link2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
+                        insertTextAtCursor(textarea, '`', '`');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="كود"
+                    >
+                      <Code className="w-4 h-4" />
+                    </button>
                   </div>
                   <textarea
-                    id="descAr"
-                    value={formData.descriptionAr}
-                    onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
-                    className="w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[150px]"
-                    placeholder="وصف المنتج بالتفصيل...\n\nيمكنك استخدام:\n• **نص عريض**\n• *نص مائل*\n• قوائم نقطية"
+                    id="desc"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[200px] resize-y"
+                    placeholder="اكتب وصف المنتج بالتفصيل... يمكنك استخدام التنسيقات المتقدمة"
                   />
                 </div>
               </div>
@@ -447,7 +534,7 @@ export default function MerchantProducts() {
               </div>
 
               {/* Price & Stock */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2">
                     السعر (دج) *
@@ -459,8 +546,22 @@ export default function MerchantProducts() {
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="1500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-500">
+                    السعر قبل الخصم
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.comparePrice}
+                    onChange={(e) => setFormData({ ...formData, comparePrice: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="2000"
                   />
                 </div>
                 <div>
@@ -473,25 +574,38 @@ export default function MerchantProducts() {
                     min="0"
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="100"
                   />
                 </div>
               </div>
 
-              {/* Category & Tags */}
+              {/* Category & SKU */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    الفئة
+                  <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-purple-600" />
+                    التصنيف
                   </label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="إلكترونيات، ملابس، إلخ"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">اختر تصنيف</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryModal(true)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-2">
@@ -501,7 +615,7 @@ export default function MerchantProducts() {
                     type="text"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="PROD-001"
                   />
                 </div>
@@ -516,9 +630,159 @@ export default function MerchantProducts() {
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="جديد، عرض، مميز"
                 />
+              </div>
+
+              {/* Offer Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    id="isOffer"
+                    checked={formData.isOffer}
+                    onChange={(e) => setFormData({ ...formData, isOffer: e.target.checked })}
+                    className="w-4 h-4 accent-purple-600"
+                  />
+                  <label htmlFor="isOffer" className="font-semibold flex items-center gap-2">
+                    <Percent className="w-5 h-5 text-orange-600" />
+                    هذا المنتج عرض خاص
+                  </label>
+                </div>
+                {formData.isOffer && (
+                  <div className="grid grid-cols-2 gap-4 bg-orange-50 p-4 rounded-lg">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">
+                        سعر العرض (دج) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.offerPrice}
+                        onChange={(e) => setFormData({ ...formData, offerPrice: e.target.value })}
+                        className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="1200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">
+                        تاريخ انتهاء العرض
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.offerEndDate}
+                        onChange={(e) => setFormData({ ...formData, offerEndDate: e.target.value })}
+                        className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Variants Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="font-semibold flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-blue-600" />
+                    المتغيرات (المقاسات، الألوان، إلخ)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowVariants(!showVariants)}
+                    className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    {showVariants ? 'إخفاء' : 'إضافة متغيرات'}
+                  </button>
+                </div>
+                {showVariants && (
+                  <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                    {formData.variants.map((variant, index) => (
+                      <div key={index} className="bg-white p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm">متغير #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeVariant(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="الاسم (مثلاً: اللون)"
+                            value={variant.name}
+                            onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                            className="px-3 py-2 border rounded-lg text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="القيم (أحمر، أزرق)"
+                            value={variant.values.join(', ')}
+                            onChange={(e) => updateVariant(index, 'values', e.target.value.split(',').map(v => v.trim()))}
+                            className="px-3 py-2 border rounded-lg text-sm"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addVariant}
+                      className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-100 transition flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      إضافة متغير جديد
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Landing Page Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    id="isLandingPage"
+                    checked={formData.isLandingPage}
+                    onChange={(e) => setFormData({ ...formData, isLandingPage: e.target.checked })}
+                    className="w-4 h-4 accent-purple-600"
+                  />
+                  <label htmlFor="isLandingPage" className="font-semibold flex items-center gap-2">
+                    <Package className="w-5 h-5 text-green-600" />
+                    عرض كصفحة هبوط (Landing Page)
+                  </label>
+                </div>
+                {formData.isLandingPage && (
+                  <div className="bg-green-50 p-4 rounded-lg space-y-3">
+                    <p className="text-sm text-green-700">
+                      ✨ صفحة الهبوط تخفي كل عناصر الموقع وتركز فقط على المنتج مع زر "اطلب الآن" احترافي
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="showWhatsapp"
+                        checked={formData.showWhatsappButton}
+                        onChange={(e) => setFormData({ ...formData, showWhatsappButton: e.target.checked })}
+                        className="w-4 h-4 accent-green-600"
+                      />
+                      <label htmlFor="showWhatsapp" className="text-sm font-medium">
+                        إظهار زر واتساب
+                      </label>
+                    </div>
+                    {formData.showWhatsappButton && (
+                      <input
+                        type="tel"
+                        placeholder="رقم الواتساب (مثال: 213555123456)"
+                        value={formData.whatsappNumber}
+                        onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                        className="w-full px-4 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Buttons */}
@@ -549,6 +813,41 @@ export default function MerchantProducts() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold mb-4">إضافة تصنيف جديد</h3>
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+              placeholder="اسم التصنيف"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setNewCategory('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={addCategory}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              >
+                إضافة
+              </button>
+            </div>
           </div>
         </div>
       )}
