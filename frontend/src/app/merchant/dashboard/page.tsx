@@ -129,6 +129,19 @@ export default function MerchantDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-6">
+        {/* زر عرض المتجر */}
+        <div className="mb-6">
+          <a
+            href={tenant?.subdomain ? `/store/${tenant.subdomain}` : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:scale-105 transition-all"
+          >
+            <ExternalLink className="h-5 w-5" />
+            عرض متجري
+          </a>
+        </div>
+
         {/* حالة الاشتراك */}
         {isTrial && (
           <div className="bg-blue-50 border-r-4 border-blue-500 rounded-lg p-4 mb-6">

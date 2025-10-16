@@ -15,7 +15,6 @@ import {
   LogOut,
   Menu,
   X,
-  ExternalLink,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -86,19 +85,6 @@ export default function MerchantNav() {
               );
             })}
           </nav>
-
-          {/* View Store Button */}
-          <div className="flex-shrink-0 px-4 pb-3">
-            <a
-              href={user?.tenant?.subdomain ? `/store/${user.tenant.subdomain}` : '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex w-full items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:shadow-lg transition-all"
-            >
-              <ExternalLink className="ml-3 flex-shrink-0 h-5 w-5" />
-              عرض متجري
-            </a>
-          </div>
 
           {/* Logout */}
           <div className="flex-shrink-0 p-4 border-t border-gray-200">
@@ -173,20 +159,7 @@ export default function MerchantNav() {
                   );
                 })}
               </nav>
-
-              {/* View Store Button */}
-              <div className="px-4 pb-3">
-                <a
-                  href={user?.tenant?.subdomain ? `/store/${user.tenant.subdomain}` : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex w-full items-center px-3 py-3 text-base font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:shadow-lg transition-all"
-                >
-                  <ExternalLink className="ml-3 flex-shrink-0 h-6 w-6" />
-                  عرض متجري
-                </a>
-              </div>
-
+              
               {/* Logout */}
               <div className="p-4 border-t border-gray-200">
                 <button
