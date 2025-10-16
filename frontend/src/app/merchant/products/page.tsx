@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2 } from 'lucide-react';
 
 export default function MerchantProducts() {
   const router = useRouter();
@@ -33,6 +33,8 @@ export default function MerchantProducts() {
     isFeatured: false,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [showVariants, setShowVariants] = useState(false);
 
   useEffect(() => {
@@ -100,6 +102,8 @@ export default function MerchantProducts() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setUploadingImages(true);
+      
       // Upload images first
       const imageUrls = await uploadImages(imageFiles);
       
@@ -123,6 +127,8 @@ export default function MerchantProducts() {
       loadProducts();
     } catch (error: any) {
       alert(error.response?.data?.message || 'حدث خطأ في إضافة المنتج');
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -148,6 +154,7 @@ export default function MerchantProducts() {
       isFeatured: false,
     });
     setImageFiles([]);
+    setImagePreviews([]);
     setShowVariants(false);
   };
 
@@ -311,18 +318,132 @@ export default function MerchantProducts() {
                 />
               </div>
 
-              {/* Description AR */}
+              {/* Description AR - Rich Text */}
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   الوصف (عربي)
                 </label>
-                <textarea
-                  value={formData.descriptionAr}
-                  onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  rows={3}
-                  placeholder="وصف المنتج"
-                />
+                <div className="border rounded-lg overflow-hidden">
+                  {/* Toolbar */}
+                  <div className="bg-gray-50 border-b px-3 py-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('descAr') as HTMLTextAreaElement;
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        const text = formData.descriptionAr || '';
+                        const newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
+                        setFormData({ ...formData, descriptionAr: newText });
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="عريض"
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('descAr') as HTMLTextAreaElement;
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        const text = formData.descriptionAr || '';
+                        const newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
+                        setFormData({ ...formData, descriptionAr: newText });
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="مائل"
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const text = formData.descriptionAr || '';
+                        setFormData({ ...formData, descriptionAr: text + '\n• ' });
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded transition"
+                      title="قائمة"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <textarea
+                    id="descAr"
+                    value={formData.descriptionAr}
+                    onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
+                    className="w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[150px]"
+                    placeholder="وصف المنتج بالتفصيل...\n\nيمكنك استخدام:\n• **نص عريض**\n• *نص مائل*\n• قوائم نقطية"
+                  />
+                </div>
+              </div>
+
+              {/* Images Upload */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  صور المنتج (متعددة)
+                </label>
+                <div className="space-y-3">
+                  {/* Upload Button */}
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">اضغط لرفع الصور</span> أو اسحب وأفلت
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP (MAX. 5MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setImageFiles(prev => [...prev, ...files]);
+                        
+                        // Create previews
+                        files.forEach(file => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setImagePreviews(prev => [...prev, reader.result as string]);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                      }}
+                    />
+                  </label>
+
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-3">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreviews(prev => prev.filter((_, i) => i !== index));
+                              setImageFiles(prev => prev.filter((_, i) => i !== index));
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          {index === 0 && (
+                            <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
+                              رئيسية
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Price & Stock */}
@@ -358,17 +479,45 @@ export default function MerchantProducts() {
                 </div>
               </div>
 
-              {/* SKU */}
+              {/* Category & Tags */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    الفئة
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="إلكترونيات، ملابس، إلخ"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    رمز المنتج (SKU)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="PROD-001"
+                  />
+                </div>
+              </div>
+
+              {/* Tags */}
               <div>
                 <label className="block text-sm font-semibold mb-2">
-                  رمز المنتج (SKU)
+                  الوسوم (مفصولة بفاصلة)
                 </label>
                 <input
                   type="text"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="PROD-001"
+                  placeholder="جديد، عرض، مميز"
                 />
               </div>
 
@@ -383,9 +532,20 @@ export default function MerchantProducts() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+                  disabled={uploadingImages}
+                  className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  إضافة المنتج
+                  {uploadingImages ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      جاري الرفع...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5" />
+                      إضافة المنتج
+                    </>
+                  )}
                 </button>
               </div>
             </form>

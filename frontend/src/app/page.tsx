@@ -1,46 +1,73 @@
+'use client';
+
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Sparkles, Zap, TrendingUp, Shield, Rocket, Star } from 'lucide-react';
 
 export default function HomePage() {
+  const [text, setText] = useState('');
+  const fullText = 'أنشئ متجرك الإلكتروني في دقائق';
+  
+  useEffect(() => {
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index <= fullText.length) {
+        setText(fullText.slice(0, index));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="relative bg-gray-900/50 backdrop-blur-md border-b border-purple-500/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-3xl font-bold text-primary-600">
+              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-pulse">
                 رحبة 🛍️
               </div>
-              <span className="text-sm bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
+              <span className="text-sm bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full border border-purple-400/30 animate-pulse">
                 Beta
               </span>
             </div>
             <div className="hidden md:flex items-center gap-8">
-              <Link href="#features" className="text-gray-600 hover:text-primary-600 transition">
+              <Link href="#features" className="text-gray-300 hover:text-purple-400 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">
                 المميزات
               </Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-primary-600 transition">
+              <Link href="#pricing" className="text-gray-300 hover:text-purple-400 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">
                 الأسعار
               </Link>
-              <Link href="#testimonials" className="text-gray-600 hover:text-primary-600 transition">
+              <Link href="#testimonials" className="text-gray-300 hover:text-purple-400 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">
                 آراء العملاء
               </Link>
-              <Link href="#contact" className="text-gray-600 hover:text-primary-600 transition">
-                تواصل معنا
+              <Link href="#demo" className="text-gray-300 hover:text-purple-400 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">
+                عرض توضيحي
               </Link>
             </div>
             <div className="flex gap-3">
               <Link
                 href="/auth/login"
-                className="px-4 py-2 text-gray-700 hover:text-primary-600 transition font-medium"
+                className="px-4 py-2 text-gray-300 hover:text-purple-400 transition-all duration-300 font-medium hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]"
               >
                 تسجيل الدخول
               </Link>
               <Link
                 href="/auth/register"
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/70 transform hover:-translate-y-0.5 hover:scale-105 animate-pulse"
               >
-                ابدأ مجاناً
+                ابدأ مجاناً ✨
               </Link>
             </div>
           </nav>
@@ -48,35 +75,43 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <main className="bg-gradient-to-br from-primary-50 via-white to-blue-50">
+      <main className="relative">
         <div className="container mx-auto px-4 py-20">
-          <div className="text-center max-w-5xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className="text-center max-w-5xl mx-auto relative z-10">
+            <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-purple-400/30 backdrop-blur-sm animate-bounce">
+              <Sparkles className="w-4 h-4" />
               🎉 جديد: دعم الذكاء الاصطناعي لتحسين المبيعات
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              أنشئ متجرك الإلكتروني
-              <span className="text-primary-600"> في دقائق</span> 🚀
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(168,85,247,0.5)] animate-pulse">
+                {text}
+              </span>
+              <span className="inline-block animate-bounce ml-4">🚀</span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
-              منصة متكاملة لإدارة متجرك الإلكتروني في الجزائر
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+              <span className="text-purple-300">منصة متكاملة</span> لإدارة متجرك الإلكتروني في <span className="text-pink-400">الجزائر</span>
               <br />
-              مع دعم الدفع عند الاستلام والتوصيل لكل الولايات
+              مع دعم <span className="text-blue-400">الدفع عند الاستلام</span> والتوصيل لكل الولايات
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link
                 href="/auth/register"
-                className="px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-xl hover:bg-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/70 transform hover:-translate-y-1 hover:scale-105 relative overflow-hidden"
               >
-                ابدأ تجربة مجانية 7 أيام ✨
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Rocket className="w-5 h-5 group-hover:animate-bounce" />
+                  ابدأ تجربة مجانية 7 أيام ✨
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </Link>
               <Link
-                href="#demo"
-                className="px-8 py-4 bg-white text-primary-600 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-md border border-gray-200"
+                href="/store/demo"
+                className="px-8 py-4 bg-gray-800/50 backdrop-blur-sm text-purple-300 text-lg font-semibold rounded-xl hover:bg-gray-800/70 transition-all duration-300 shadow-md border border-purple-500/30 hover:border-purple-400/50 hover:shadow-lg hover:shadow-purple-500/30 transform hover:-translate-y-1 flex items-center justify-center gap-2"
               >
+                <Zap className="w-5 h-5" />
                 شاهد العرض التوضيحي 🎥
               </Link>
             </div>
