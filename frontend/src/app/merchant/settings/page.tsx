@@ -60,6 +60,11 @@ export default function MerchantSettingsComplete() {
   const [generalSettings, setGeneralSettings] = useState({
     storeName: '', storeNameAr: '', subdomain: '', defaultLanguage: 'ar',
     storeEnabled: true, customDomain: '', logo: null, banner: null,
+    // الحقول الجديدة لمعلومات المتجر
+    storeDescription: '',
+    storeAddress: '',
+    supportEmail: '',
+    supportPhone: '',
   });
 
   const [designSettings, setDesignSettings] = useState({
