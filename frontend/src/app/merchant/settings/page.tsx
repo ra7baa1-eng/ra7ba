@@ -76,6 +76,12 @@ export default function MerchantSettingsComplete() {
     newOrderMessage: 'تم استلام طلب جديد!',
   });
 
+  // ميزات الواجهة (عرض الآراء/العروض)
+  const [featuresSettings, setFeaturesSettings] = useState({
+    showReviews: true,
+    showOffers: true,
+  });
+
   // مراجع ومديرو ملفات الشعار والبنر
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -117,12 +123,14 @@ export default function MerchantSettingsComplete() {
       const d = localStorage.getItem('ra7ba:settings:design');
       const i = localStorage.getItem('ra7ba:settings:integrations');
       const n = localStorage.getItem('ra7ba:settings:notifications');
+      const f = localStorage.getItem('ra7ba:settings:features');
       const lp = localStorage.getItem('ra7ba:settings:logoPreview');
       const bp = localStorage.getItem('ra7ba:settings:bannerPreview');
       if (g) setGeneralSettings((prev: any) => ({ ...prev, ...JSON.parse(g) }));
       if (d) setDesignSettings((prev: any) => ({ ...prev, ...JSON.parse(d) }));
       if (i) setIntegrationSettings((prev: any) => ({ ...prev, ...JSON.parse(i) }));
       if (n) setNotificationSettings((prev: any) => ({ ...prev, ...JSON.parse(n) }));
+      if (f) setFeaturesSettings((prev: any) => ({ ...prev, ...JSON.parse(f) }));
       if (lp) setLogoPreviewUrl(lp);
       if (bp) setBannerPreviewUrl(bp);
     } catch {}
@@ -167,6 +175,8 @@ export default function MerchantSettingsComplete() {
           storageKey = 'ra7ba:settings:integrations';
         } else if (endpoint === '/api/settings/notifications') {
           storageKey = 'ra7ba:settings:notifications';
+        } else if (endpoint === '/api/settings/features') {
+          storageKey = 'ra7ba:settings:features';
         }
         if (storageKey) localStorage.setItem(storageKey, JSON.stringify(payload));
       } catch {}
@@ -222,6 +232,49 @@ export default function MerchantSettingsComplete() {
                   <InputField label="اسم المتجر (English)" value={generalSettings.storeName}
                     onChange={(e: any) => setGeneralSettings({...generalSettings, storeName: e.target.value})}
                     placeholder="Fashion Store" />
+                </div>
+
+                {/* معلومات المتجر */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">وصف المتجر</label>
+                    <textarea
+                      value={(generalSettings as any).storeDescription || ''}
+                      onChange={(e) => setGeneralSettings({ ...generalSettings, storeDescription: e.target.value })}
+                      className="w-full min-h-[100px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="صف بإيجاز نوع المنتجات ورسالة المتجر"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">عنوان المتجر</label>
+                    <input
+                      type="text"
+                      value={(generalSettings as any).storeAddress || ''}
+                      onChange={(e) => setGeneralSettings({ ...generalSettings, storeAddress: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="مثال: الجزائر، الدار البيضاء..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">بريد الدعم</label>
+                    <input
+                      type="email"
+                      value={(generalSettings as any).supportEmail || ''}
+                      onChange={(e) => setGeneralSettings({ ...generalSettings, supportEmail: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="support@yourstore.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">هاتف الدعم</label>
+                    <input
+                      type="tel"
+                      value={(generalSettings as any).supportPhone || ''}
+                      onChange={(e) => setGeneralSettings({ ...generalSettings, supportPhone: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="مثال: +213 555 55 55 55"
+                    />
+                  </div>
                 </div>
 
                 <InputField label="رابط المتجر" value={generalSettings.subdomain}
@@ -438,6 +491,27 @@ export default function MerchantSettingsComplete() {
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl shadow-lg">
                   <Save className="w-5 h-5" /> {saving ? 'جاري الحفظ...' : 'حفظ الإشعارات'}
                 </button>
+
+                {/* ميزات الواجهة */}
+                <div className="pt-6 border-t border-gray-100 space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900">ميزات الواجهة</h3>
+                  <ToggleSwitch
+                    enabled={featuresSettings.showReviews}
+                    onChange={() => setFeaturesSettings({ ...featuresSettings, showReviews: !featuresSettings.showReviews })}
+                    title="عرض آراء العملاء"
+                    description="إظهار قسم التقييمات في واجهة المتجر"
+                  />
+                  <ToggleSwitch
+                    enabled={featuresSettings.showOffers}
+                    onChange={() => setFeaturesSettings({ ...featuresSettings, showOffers: !featuresSettings.showOffers })}
+                    title="عرض العروض الحصرية"
+                    description="إظهار صندوق العروض الموسمية"
+                  />
+                  <button onClick={() => saveSettings('/api/settings/features', featuresSettings)} disabled={saving}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold rounded-xl shadow-lg">
+                    <Save className="w-5 h-5" /> {saving ? 'جاري الحفظ...' : 'حفظ الميزات'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
