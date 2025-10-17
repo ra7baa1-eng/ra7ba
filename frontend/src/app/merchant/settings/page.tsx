@@ -76,14 +76,43 @@ export default function MerchantSettingsComplete() {
     newOrderMessage: 'تم استلام طلب جديد!',
   });
 
+  // مراجع ومديرو ملفات الشعار والبنر
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setGeneralSettings((prev: any) => ({ ...prev, logo: file }));
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setGeneralSettings((prev: any) => ({ ...prev, banner: file }));
+  };
+
   const saveSettings = async (endpoint: string, data: any) => {
     setSaving(true);
     try {
-      await fetch(endpoint, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      // إذا كانت هناك ملفات ضمن الإعدادات العامة نرسل FormData
+      if (endpoint === '/api/settings/general' && (data?.logo instanceof File || data?.banner instanceof File)) {
+        const form = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
+          if (value instanceof File) {
+            form.append(key, value);
+          } else if (typeof value === 'boolean') {
+            form.append(key, value ? 'true' : 'false');
+          } else if (value !== undefined && value !== null) {
+            form.append(key, String(value));
+          }
+        });
+        await fetch(endpoint, { method: 'PUT', body: form });
+      } else {
+        await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+      }
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
@@ -141,6 +170,76 @@ export default function MerchantSettingsComplete() {
                 <InputField label="رابط المتجر" value={generalSettings.subdomain}
                   onChange={(e: any) => setGeneralSettings({...generalSettings, subdomain: e.target.value})}
                   placeholder="mystore" />
+                {/* رفع الشعار والبنر */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* شعار المتجر */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">شعار المتجر (Logo)</label>
+                    <div
+                      onClick={() => logoInputRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) setGeneralSettings((prev: any) => ({ ...prev, logo: file })); }}
+                      className="relative border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all group"
+                    >
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        className="hidden"
+                      />
+                      {generalSettings.logo ? (
+                        <div className="space-y-2">
+                          <img
+                            src={URL.createObjectURL(generalSettings.logo as File)}
+                            alt="Logo Preview"
+                            className="mx-auto h-24 object-contain"
+                          />
+                          <p className="text-xs text-gray-600">{(generalSettings.logo as File).name}</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-gray-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 mb-2 text-gray-400 group-hover:text-blue-500"><path d="M19.5 14.25v2.878a2.25 2.25 0 01-2.25 2.25h-10.5a2.25 2.25 0 01-2.25-2.25V14.25m15 0A2.25 2.25 0 0017.25 12h-10.5A2.25 2.25 0 004.5 14.25m15 0v-4.372a2.25 2.25 0 00-.659-1.591l-3.128-3.128A2.25 2.25 0 0014.121 4.5H9.879a2.25 2.25 0 00-1.591.659L5.16 8.287A2.25 2.25 0 004.5 9.879V14.25"/></svg>
+                          <span className="text-sm">انقر أو اسحب الصورة هنا</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* صورة الغلاف */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">صورة الغلاف (Banner)</label>
+                    <div
+                      onClick={() => bannerInputRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) setGeneralSettings((prev: any) => ({ ...prev, banner: file })); }}
+                      className="relative border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all group"
+                    >
+                      <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerChange}
+                        className="hidden"
+                      />
+                      {generalSettings.banner ? (
+                        <div className="space-y-2">
+                          <img
+                            src={URL.createObjectURL(generalSettings.banner as File)}
+                            alt="Banner Preview"
+                            className="mx-auto h-24 object-cover rounded"
+                          />
+                          <p className="text-xs text-gray-600">{(generalSettings.banner as File).name}</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-gray-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 mb-2 text-gray-400 group-hover:text-blue-500"><path d="M19.5 14.25v2.878a2.25 2.25 0 01-2.25 2.25h-10.5a2.25 2.25 0 01-2.25-2.25V14.25m15 0A2.25 2.25 0 0017.25 12h-10.5A2.25 2.25 0 004.5 14.25m15 0v-4.372a2.25 2.25 0 00-.659-1.591l-3.128-3.128A2.25 2.25 0 0014.121 4.5H9.879a2.25 2.25 0 00-1.591.659L5.16 8.287A2.25 2.25 0 004.5 9.879V14.25"/></svg>
+                          <span className="text-sm">انقر أو اسحب الصورة هنا</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 <ToggleSwitch 
                   enabled={generalSettings.storeEnabled}
