@@ -185,19 +185,16 @@ export default function MerchantDashboard() {
                 تحديث
               </button>
               
-              <button
-                onClick={() => {
-                  if (tenant?.subdomain) {
-                    window.open(`${window.location.origin}/store/${tenant.subdomain}`, '_blank');
-                  }
-                }}
-                disabled={!tenant?.subdomain}
-                className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${getTimeBasedColor()} text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+              <a
+                href={tenant?.subdomain ? `/store/${tenant.subdomain}` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${getTimeBasedColor()} text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 ${!tenant?.subdomain ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
               >
                 <Eye className="w-5 h-5" />
                 عرض متجري
                 <ExternalLink className="w-4 h-4" />
-              </button>
+              </a>
             </div>
           </div>
         </div>
