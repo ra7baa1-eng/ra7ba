@@ -134,12 +134,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Admin Login Hint */}
-        <div className="mt-6 text-center bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20">
-          <p className="text-sm text-purple-300">
-            🔒 للمسؤولين: استخدم حساب الأدمن
-          </p>
-        </div>
       </div>
     </div>
   );
