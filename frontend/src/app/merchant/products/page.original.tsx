@@ -1,26 +1,18 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
-import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2, Heading, Code, AlignLeft, AlignCenter, AlignRight, Underline, Strikethrough, ListOrdered, Quote, Minus, Tag, Percent, Layers, ChevronRight, ChevronLeft, Check, Eye, Truck, Ruler, BarChart3, Copy, Award, Search, Sparkles, Save, Zap } from 'lucide-react';
-import ProductPreview from '@/components/products/ProductPreview';
-import ImageUploader from '@/components/products/ImageUploader';
-import VariantsTable from '@/components/products/VariantsTable';
+import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2, Heading, Code, AlignLeft, AlignCenter, AlignRight, Underline, Strikethrough, ListOrdered, Quote, Minus, Tag, Percent, Layers } from 'lucide-react';
 
 export default function MerchantProducts() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [showPreview, setShowPreview] = useState(false);
-  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -30,7 +22,6 @@ export default function MerchantProducts() {
     sku: '',
     images: [] as string[],
     variants: [] as any[],
-    variantCombinations: [] as any[],
     category: '',
     tags: '',
     isOffer: false,
@@ -41,30 +32,6 @@ export default function MerchantProducts() {
     showWhatsappButton: false,
     isActive: true,
     isFeatured: false,
-    // SEO
-    seoTitle: '',
-    seoDescription: '',
-    slug: '',
-    // الشحن والأبعاد
-    weight: '',
-    weightUnit: 'kg' as 'kg' | 'g',
-    length: '',
-    width: '',
-    height: '',
-    dimensionUnit: 'cm' as 'cm' | 'm',
-    shippingFee: '',
-    freeShipping: false,
-    // المخزون المتقدم
-    lowStockAlert: '',
-    allowBackorder: false,
-    barcode: '',
-    // التسعير المتدرج
-    bulkPricing: [] as Array<{ min: number; max: number; price: number }>,
-    // الشارات
-    badges: [] as string[],
-    // المنتجات المرتبطة
-    relatedProducts: [] as string[],
-    crossSellProducts: [] as string[],
   });
   const [categories, setCategories] = useState<string[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -73,50 +40,10 @@ export default function MerchantProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [showVariants, setShowVariants] = useState(false);
-  const [availableBadges] = useState(['جديد', 'الأكثر مبيعاً', 'محدود', 'حصري', 'عرض ساخن', 'توصية']);
 
   useEffect(() => {
     loadProducts();
   }, []);
-
-  // الحفظ التلقائي
-  useEffect(() => {
-    if (!showAddModal) return;
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      try {
-        localStorage.setItem('ra7ba:product:draft', JSON.stringify(formData));
-        setLastSaved(new Date());
-      } catch (e) {}
-    }, 3000);
-    return () => {
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    };
-  }, [formData, showAddModal]);
-
-  // استرجاع المسودة
-  useEffect(() => {
-    if (showAddModal) {
-      try {
-        const draft = localStorage.getItem('ra7ba:product:draft');
-        if (draft && confirm('هل تريد استرجاع المسودة المحفوظة؟')) {
-          setFormData(JSON.parse(draft));
-        }
-      } catch (e) {}
-    }
-  }, [showAddModal]);
-
-  // توليد Slug تلقائي
-  useEffect(() => {
-    if (formData.name && !formData.slug) {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^\w\s-\u0600-\u06ff]/g, '')
-        .replace(/\s+/g, '-')
-        .substring(0, 50);
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  }, [formData.name]);
 
   const loadProducts = async () => {
     try {
@@ -151,68 +78,6 @@ export default function MerchantProducts() {
 
   const removeImage = (index: number) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // إدارة الخطوات
-  const nextStep = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const goToStep = (step: number) => {
-    setCurrentStep(step);
-  };
-
-  // نسخ منتج
-  const handleDuplicateProduct = (product: any) => {
-    setFormData({
-      ...formData,
-      name: product.nameAr + ' (نسخة)',
-      description: product.descriptionAr || '',
-      price: product.price?.toString() || '',
-      stock: product.stock?.toString() || '',
-      category: product.category || '',
-      tags: product.tags?.join(', ') || '',
-    });
-    setShowAddModal(true);
-  };
-
-  // إضافة/حذف شارة
-  const toggleBadge = (badge: string) => {
-    setFormData(prev => ({
-      ...prev,
-      badges: prev.badges.includes(badge)
-        ? prev.badges.filter(b => b !== badge)
-        : [...prev.badges, badge]
-    }));
-  };
-
-  // إضافة تسعير متدرج
-  const addBulkPricingTier = () => {
-    setFormData(prev => ({
-      ...prev,
-      bulkPricing: [...prev.bulkPricing, { min: 1, max: 10, price: 0 }]
-    }));
-  };
-
-  const removeBulkPricingTier = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      bulkPricing: prev.bulkPricing.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateBulkPricingTier = (index: number, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      bulkPricing: prev.bulkPricing.map((tier, i) =>
-        i === index ? { ...tier, [field]: parseFloat(value) || 0 } : tier
-      )
-    }));
   };
 
   const addVariant = () => {
@@ -280,8 +145,6 @@ export default function MerchantProducts() {
 
   const resetForm = () => {
     setShowAddModal(false);
-    setCurrentStep(1);
-    setShowPreview(false);
     setFormData({
       name: '',
       description: '',
@@ -291,7 +154,6 @@ export default function MerchantProducts() {
       sku: '',
       images: [],
       variants: [],
-      variantCombinations: [],
       category: '',
       tags: '',
       isOffer: false,
@@ -302,31 +164,10 @@ export default function MerchantProducts() {
       showWhatsappButton: false,
       isActive: true,
       isFeatured: false,
-      seoTitle: '',
-      seoDescription: '',
-      slug: '',
-      weight: '',
-      weightUnit: 'kg' as 'kg' | 'g',
-      length: '',
-      width: '',
-      height: '',
-      dimensionUnit: 'cm' as 'cm' | 'm',
-      shippingFee: '',
-      freeShipping: false,
-      lowStockAlert: '',
-      allowBackorder: false,
-      barcode: '',
-      bulkPricing: [],
-      badges: [],
-      relatedProducts: [],
-      crossSellProducts: [],
     });
     setImageFiles([]);
     setImagePreviews([]);
     setShowVariants(false);
-    try {
-      localStorage.removeItem('ra7ba:product:draft');
-    } catch (e) {}
   };
 
   const addCategory = () => {
@@ -432,23 +273,15 @@ export default function MerchantProducts() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/merchant/products/${product.id}/edit`)}
-                      className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm"
+                      className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
                     >
                       تعديل
                     </button>
                     <button
-                      onClick={() => handleDuplicateProduct(product)}
-                      className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition"
-                      title="نسخ المنتج"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
                       onClick={() => handleDeleteProduct(product.id)}
-                      className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
-                      title="حذف"
+                      className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
                     >
-                      <X className="w-4 h-4" />
+                      حذف
                     </button>
                   </div>
                 </div>
@@ -460,97 +293,21 @@ export default function MerchantProducts() {
 
       {/* Add Product Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-6xl w-full my-8">
-            {/* Header */}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <Package className="w-7 h-7 text-purple-600" />
-                    إضافة منتج جديد
-                  </h2>
-                  {lastSaved && (
-                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                      <Save className="w-3 h-3" />
-                      آخر حفظ: {lastSaved.toLocaleTimeString('ar')}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    {showPreview ? 'إخفاء المعاينة' : 'معاينة'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Progress Steps */}
-              <div className="flex items-center justify-between mt-6">
-                {[
-                  { num: 1, label: 'المعلومات الأساسية', icon: Package },
-                  { num: 2, label: 'التسعير والمخزون', icon: BarChart3 },
-                  { num: 3, label: 'الشحن والأبعاد', icon: Truck },
-                  { num: 4, label: 'SEO والميزات', icon: Sparkles },
-                  { num: 5, label: 'المراجعة والنشر', icon: Check },
-                ].map((step, idx) => (
-                  <div key={step.num} className="flex items-center flex-1">
-                    <button
-                      type="button"
-                      onClick={() => goToStep(step.num)}
-                      className={`flex flex-col items-center gap-1 transition ${
-                        currentStep === step.num
-                          ? 'text-purple-600'
-                          : currentStep > step.num
-                          ? 'text-green-600'
-                          : 'text-gray-400'
-                      }`}
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${
-                          currentStep === step.num
-                            ? 'bg-purple-600 text-white'
-                            : currentStep > step.num
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-200 text-gray-500'
-                        }`}
-                      >
-                        {currentStep > step.num ? (
-                          <Check className="w-5 h-5" />
-                        ) : (
-                          <step.icon className="w-5 h-5" />
-                        )}
-                      </div>
-                      <span className="text-xs font-medium text-center hidden md:block">
-                        {step.label}
-                      </span>
-                    </button>
-                    {idx < 4 && (
-                      <div
-                        className={`flex-1 h-1 mx-2 rounded transition ${
-                          currentStep > step.num ? 'bg-green-600' : 'bg-gray-200'
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">إضافة منتج جديد</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
               </div>
             </div>
 
-            <form onSubmit={handleAddProduct} className="flex gap-6 p-6">
-              {/* Main Form */}
-              <div className={`space-y-6 transition-all ${showPreview ? 'w-2/3' : 'w-full'}`}>
+            <form onSubmit={handleAddProduct} className="p-6 space-y-6">
               {/* Product Name */}
               <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
