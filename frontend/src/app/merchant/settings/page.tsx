@@ -142,7 +142,11 @@ export default function MerchantSettingsComplete() {
     let cancelled = false;
     const loadWilayas = async () => {
       try {
-        const res = await fetch('https://raw.githubusercontent.com/othmanus/algeria-cities/master/json/ar/algeria_cities.json');
+        // جرّب الملف المحلي من public أولاً، ثم ارجع لمصدر GitHub عند الفشل
+        let res = await fetch('/data/algeria/algeria_cities.ar.json').catch(() => null as any);
+        if (!res || !res.ok) {
+          res = await fetch('https://raw.githubusercontent.com/othmanus/algeria-cities/master/json/ar/algeria_cities.json');
+        }
         const data = await res.json();
         // نبني خرائط: ولايات -> دوائر -> بلديات
         const map = new Map<string, { code: string; name: string }>();
