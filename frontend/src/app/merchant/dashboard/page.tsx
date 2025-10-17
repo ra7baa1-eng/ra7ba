@@ -186,7 +186,7 @@ export default function MerchantDashboard() {
               </button>
               
               <a
-                href={tenant?.subdomain ? `/store/${tenant.subdomain}` : '#'}
+                href={tenant?.subdomain ? `https://${tenant.subdomain}.ra7ba.com` : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${getTimeBasedColor()} text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300`}
