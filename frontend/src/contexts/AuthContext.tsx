@@ -42,51 +42,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
       const storedUser = localStorage.getItem('user');
 
-      if (!accessToken || !refreshToken || !storedUser) {
+      if (!accessToken || !storedUser) {
         setLoading(false);
         return;
       }
 
-      // Try to parse stored user
+      // استخدام البيانات المحفوظة مباشرة (سريع جداً)
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
+      setLoading(false);
       
-      // Validate token by making a test request
-      try {
-        const { data } = await authApi.validateToken();
-        setUser(data.user);
-        // Update stored user data
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } catch (error: any) {
-        // Token might be expired, try to refresh
-        if (error.response?.status === 401) {
-          try {
-            const { data } = await authApi.refreshToken(refreshToken);
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-            
-            // Get user info again
-            const userResponse = await authApi.getProfile();
-            const freshUser = (userResponse?.data && (userResponse.data as any).user) || parsedUser;
-            setUser(freshUser);
-            localStorage.setItem('user', JSON.stringify(freshUser));
-          } catch (refreshError) {
-            // Refresh failed, logout
-            console.log('Refresh token failed, logging out');
-            logout();
-          }
-        } else {
-          // Use stored user data if validation fails for other reasons
-          setUser(parsedUser);
-        }
-      }
+      // التحقق من التوكن في الخلفية (بدون انتظار)
+      authApi.validateToken().catch(() => {
+        // إذا فشل التوكن، سيتم تسجيل الخروج عند أول طلب API
+        console.log('Token validation failed - will logout on next API call');
+      });
     } catch (error) {
       console.error('Auth check failed:', error);
-      logout();
-    } finally {
       setLoading(false);
     }
   };
