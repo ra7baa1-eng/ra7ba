@@ -1,18 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { uploadImageToImgBB } from '@/lib/upload';
-import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2, Heading, Code, AlignLeft, AlignCenter, AlignRight, Underline, Strikethrough, ListOrdered, Quote, Minus, Tag, Percent, Layers, Copy } from 'lucide-react';
+import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2, Heading, Code, AlignLeft, AlignCenter, AlignRight, Underline, Strikethrough, ListOrdered, Quote, Minus, Tag, Percent, Layers, Copy, ChevronRight, ChevronLeft, Check, Eye, Truck, Ruler, BarChart3, Award, Search, Sparkles, Save, Zap } from 'lucide-react';
+import ProductPreview from '@/components/products/ProductPreview';
+import ImageUploader from '@/components/products/ImageUploader';
+import VariantsTable from '@/components/products/VariantsTable';
 
 export default function MerchantProducts() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showPreview, setShowPreview] = useState(false);
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -22,6 +30,7 @@ export default function MerchantProducts() {
     sku: '',
     images: [] as string[],
     variants: [] as any[],
+    variantCombinations: [] as any[],
     category: '',
     tags: '',
     isOffer: false,
@@ -32,6 +41,30 @@ export default function MerchantProducts() {
     showWhatsappButton: false,
     isActive: true,
     isFeatured: false,
+    // SEO
+    seoTitle: '',
+    seoDescription: '',
+    slug: '',
+    // الشحن والأبعاد
+    weight: '',
+    weightUnit: 'kg' as 'kg' | 'g',
+    length: '',
+    width: '',
+    height: '',
+    dimensionUnit: 'cm' as 'cm' | 'm',
+    shippingFee: '',
+    freeShipping: false,
+    // المخزون المتقدم
+    lowStockAlert: '',
+    allowBackorder: false,
+    barcode: '',
+    // التسعير المتدرج
+    bulkPricing: [] as Array<{ min: number; max: number; price: number }>,
+    // الشارات
+    badges: [] as string[],
+    // المنتجات المرتبطة
+    relatedProducts: [] as string[],
+    crossSellProducts: [] as string[],
   });
   const [categories, setCategories] = useState<string[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -40,10 +73,50 @@ export default function MerchantProducts() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [showVariants, setShowVariants] = useState(false);
+  const [availableBadges] = useState(['جديد', 'الأكثر مبيعاً', 'محدود', 'حصري', 'عرض ساخن', 'توصية']);
 
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // الحفظ التلقائي
+  useEffect(() => {
+    if (!showAddModal) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem('ra7ba:product:draft', JSON.stringify(formData));
+        setLastSaved(new Date());
+      } catch (e) {}
+    }, 3000);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [formData, showAddModal]);
+
+  // استرجاع المسودة
+  useEffect(() => {
+    if (showAddModal) {
+      try {
+        const draft = localStorage.getItem('ra7ba:product:draft');
+        if (draft && confirm('هل تريد استرجاع المسودة المحفوظة؟')) {
+          setFormData(JSON.parse(draft));
+        }
+      } catch (e) {}
+    }
+  }, [showAddModal]);
+
+  // توليد Slug تلقائي
+  useEffect(() => {
+    if (formData.name && !formData.slug) {
+      const slug = formData.name
+        .toLowerCase()
+        .replace(/[^\w\s-\u0600-\u06ff]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 50);
+      setFormData(prev => ({ ...prev, slug }));
+    }
+  }, [formData.name]);
 
   const loadProducts = async () => {
     try {
@@ -78,6 +151,54 @@ export default function MerchantProducts() {
 
   const removeImage = (index: number) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // إدارة الخطوات
+  const nextStep = () => {
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+  };
+
+  // إضافة/حذف شارة
+  const toggleBadge = (badge: string) => {
+    setFormData(prev => ({
+      ...prev,
+      badges: prev.badges.includes(badge)
+        ? prev.badges.filter(b => b !== badge)
+        : [...prev.badges, badge]
+    }));
+  };
+
+  // إضافة تسعير متدرج
+  const addBulkPricingTier = () => {
+    setFormData(prev => ({
+      ...prev,
+      bulkPricing: [...prev.bulkPricing, { min: 1, max: 10, price: 0 }]
+    }));
+  };
+
+  const removeBulkPricingTier = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      bulkPricing: prev.bulkPricing.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateBulkPricingTier = (index: number, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      bulkPricing: prev.bulkPricing.map((tier, i) =>
+        i === index ? { ...tier, [field]: parseFloat(value) || 0 } : tier
+      )
+    }));
   };
 
   const addVariant = () => {
@@ -145,6 +266,8 @@ export default function MerchantProducts() {
 
   const resetForm = () => {
     setShowAddModal(false);
+    setCurrentStep(1);
+    setShowPreview(false);
     setFormData({
       name: '',
       description: '',
@@ -154,6 +277,7 @@ export default function MerchantProducts() {
       sku: '',
       images: [],
       variants: [],
+      variantCombinations: [],
       category: '',
       tags: '',
       isOffer: false,
@@ -164,10 +288,31 @@ export default function MerchantProducts() {
       showWhatsappButton: false,
       isActive: true,
       isFeatured: false,
+      seoTitle: '',
+      seoDescription: '',
+      slug: '',
+      weight: '',
+      weightUnit: 'kg' as 'kg' | 'g',
+      length: '',
+      width: '',
+      height: '',
+      dimensionUnit: 'cm' as 'cm' | 'm',
+      shippingFee: '',
+      freeShipping: false,
+      lowStockAlert: '',
+      allowBackorder: false,
+      barcode: '',
+      bulkPricing: [],
+      badges: [],
+      relatedProducts: [],
+      crossSellProducts: [],
     });
     setImageFiles([]);
     setImagePreviews([]);
     setShowVariants(false);
+    try {
+      localStorage.removeItem('ra7ba:product:draft');
+    } catch (e) {}
   };
 
   const addCategory = () => {
