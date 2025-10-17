@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
@@ -20,10 +20,41 @@ export default function RichTextEditor({
   placeholder = 'اكتب وصف المنتج بالتفصيل...',
   height = '300px'
 }: RichTextEditorProps) {
-  const quillRef = useRef<any>(null);
+  // معالج رفع الصور
+  const imageHandler = useMemo(() => {
+    return function(this: any) {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+
+      const quill = this.quill;
+
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        // تحويل الصورة إلى Base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageUrl = e.target?.result as string;
+          if (quill) {
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', imageUrl);
+            quill.setSelection(range.index + 1);
+          }
+        };
+        reader.readAsDataURL(file);
+
+        // TODO: رفع الصورة إلى ImgBB أو سيرفر آخر
+        // const imageUrl = await uploadImageToImgBB(file);
+        // quill.insertEmbed(range.index, 'image', imageUrl);
+      };
+    };
+  }, []);
 
   // إعدادات شريط الأدوات
-  const modules = {
+  const modules = useMemo(() => ({
     toolbar: {
       container: [
         // تنسيق النص
@@ -56,37 +87,7 @@ export default function RichTextEditor({
     clipboard: {
       matchVisual: false
     }
-  };
-
-  // معالج رفع الصور
-  function imageHandler() {
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
-
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-
-      // تحويل الصورة إلى Base64 (يمكن استبداله برفع إلى سيرفر)
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
-        const quill = quillRef.current?.getEditor();
-        if (quill) {
-          const range = quill.getSelection(true);
-          quill.insertEmbed(range.index, 'image', imageUrl);
-          quill.setSelection(range.index + 1);
-        }
-      };
-      reader.readAsDataURL(file);
-
-      // TODO: رفع الصورة إلى ImgBB أو سيرفر آخر
-      // const imageUrl = await uploadImageToImgBB(file);
-      // quill.insertEmbed(range.index, 'image', imageUrl);
-    };
-  }
+  }), [imageHandler]);
 
   const formats = [
     'header', 'font', 'size',
@@ -224,7 +225,6 @@ export default function RichTextEditor({
       `}</style>
       
       <ReactQuill
-        ref={quillRef}
         theme="snow"
         value={value}
         onChange={onChange}
