@@ -25,6 +25,7 @@ enum TenantStatus {
 }
 
 enum SubscriptionPlan {
+  FREE // مجاني - جميع المميزات
   STANDARD // 1350 DZD
   PRO // 2500 DZD
 }
@@ -117,6 +118,8 @@ model Tenant {
   telegramChatId String?
   theme          Json? // Store theme customization
   checkoutConfig Json? // Checkout required/optional fields configuration
+  thankYouMessage String? // رسالة صفحة الشكر
+  thankYouImage   String? // صورة صفحة الشكر
   status         TenantStatus @default(TRIAL)
 
   // Trial limits
@@ -146,8 +149,8 @@ model Subscription {
   tenantId String @unique
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  plan   SubscriptionPlan   @default(STANDARD)
-  status SubscriptionStatus @default(TRIAL)
+  plan   SubscriptionPlan   @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
 
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
@@ -250,6 +253,29 @@ model Product {
   // SEO
   metaTitle       String?
   metaDescription String?
+  seoKeywords     String? // كلمات مفتاحية SEO
+  
+  // الشحن والأبعاد
+  weight         Decimal? @db.Decimal(10, 2) // الوزن
+  weightUnit     String?  @default("kg") // kg أو g
+  length         Decimal? @db.Decimal(10, 2) // الطول
+  width          Decimal? @db.Decimal(10, 2) // العرض
+  height         Decimal? @db.Decimal(10, 2) // الارتفاع
+  dimensionUnit  String?  @default("cm") // cm أو m
+  shippingFee    Decimal? @db.Decimal(10, 2) // رسوم شحن مخصصة
+  freeShipping   Boolean  @default(false) // شحن مجاني
+  
+  // المخزون المتقدم
+  lowStockAlert  Int?     // تنبيه عند انخفاض المخزون
+  allowBackorder Boolean  @default(false) // السماح بالطلب المسبق
+  
+  // التسعير المتدرج والشارات
+  bulkPricing    Json?    @default("[]") // [{min, max, price}]
+  badges         Json?    @default("[]") // ['جديد', 'الأكثر مبيعاً']
+  
+  // المنتجات المرتبطة
+  relatedProducts    Json? @default("[]") // [productId1, productId2]
+  crossSellProducts  Json? @default("[]") // منتجات يُشترى معها عادة
 
   orderItems   OrderItem[]
   // Variants relations
