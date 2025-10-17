@@ -551,8 +551,8 @@ export default function MerchantProducts() {
             <form onSubmit={handleAddProduct} className="flex gap-6 p-6">
               {/* Main Form */}
               <div className={`space-y-6 transition-all ${showPreview ? 'w-2/3' : 'w-full'}`}>
-              {/* Product Name */}
-              <div>
+                {/* Product Name */}
+                <div>
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
                   <Package className="w-4 h-4 text-purple-600" />
                   اسم المنتج *
@@ -1055,6 +1055,14 @@ export default function MerchantProducts() {
                   )}
                 </button>
               </div>
+              </div>
+
+              {/* Preview Panel */}
+              {showPreview && (
+                <div className="w-1/3 sticky top-0 max-h-screen overflow-y-auto">
+                  <ProductPreview product={formData} />
+                </div>
+              )}
             </form>
           </div>
         </div>
