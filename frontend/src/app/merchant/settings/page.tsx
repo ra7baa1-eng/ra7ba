@@ -79,16 +79,55 @@ export default function MerchantSettingsComplete() {
   // مراجع ومديرو ملفات الشعار والبنر
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setGeneralSettings((prev: any) => ({ ...prev, logo: file }));
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = String(reader.result || '');
+        setLogoPreviewUrl(url);
+        try { localStorage.setItem('ra7ba:settings:logoPreview', url); } catch {}
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setGeneralSettings((prev: any) => ({ ...prev, banner: file }));
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = String(reader.result || '');
+        setBannerPreviewUrl(url);
+        try { localStorage.setItem('ra7ba:settings:bannerPreview', url); } catch {}
+      };
+      reader.readAsDataURL(file);
+    }
   };
+
+  // استرجاع الإعدادات من التخزين المحلي عند التحميل
+  if (typeof window !== 'undefined' && !(globalThis as any).__ra7baSettingsHydrated) {
+    try {
+      const g = localStorage.getItem('ra7ba:settings:general');
+      const d = localStorage.getItem('ra7ba:settings:design');
+      const i = localStorage.getItem('ra7ba:settings:integrations');
+      const n = localStorage.getItem('ra7ba:settings:notifications');
+      const lp = localStorage.getItem('ra7ba:settings:logoPreview');
+      const bp = localStorage.getItem('ra7ba:settings:bannerPreview');
+      if (g) setGeneralSettings((prev: any) => ({ ...prev, ...JSON.parse(g) }));
+      if (d) setDesignSettings((prev: any) => ({ ...prev, ...JSON.parse(d) }));
+      if (i) setIntegrationSettings((prev: any) => ({ ...prev, ...JSON.parse(i) }));
+      if (n) setNotificationSettings((prev: any) => ({ ...prev, ...JSON.parse(n) }));
+      if (lp) setLogoPreviewUrl(lp);
+      if (bp) setBannerPreviewUrl(bp);
+    } catch {}
+    (globalThis as any).__ra7baSettingsHydrated = true;
+  }
 
   const saveSettings = async (endpoint: string, data: any) => {
     setSaving(true);
@@ -113,6 +152,24 @@ export default function MerchantSettingsComplete() {
           body: JSON.stringify(data),
         });
       }
+      // حفظ محلي حسب القسم
+      try {
+        let storageKey = '';
+        let payload: any = data;
+        if (endpoint === '/api/settings/general') {
+          storageKey = 'ra7ba:settings:general';
+          // لا نخزن الملفات مباشرة
+          const { logo, banner, ...rest } = data || {};
+          payload = rest;
+        } else if (endpoint === '/api/settings/design') {
+          storageKey = 'ra7ba:settings:design';
+        } else if (endpoint === '/api/settings/integrations') {
+          storageKey = 'ra7ba:settings:integrations';
+        } else if (endpoint === '/api/settings/notifications') {
+          storageKey = 'ra7ba:settings:notifications';
+        }
+        if (storageKey) localStorage.setItem(storageKey, JSON.stringify(payload));
+      } catch {}
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
