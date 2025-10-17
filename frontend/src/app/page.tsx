@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Sparkles, Zap, TrendingUp, Shield, Rocket, Star } from 'lucide-react';
 
@@ -35,8 +36,17 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-pulse">
-                رحبة 🛍️
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/images/logo.gif"
+                  alt="شعار منصة رحبة"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                رحبة
               </div>
               <span className="text-sm bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full border border-purple-400/30 animate-pulse">
                 Beta
@@ -180,8 +190,7 @@ export default function HomePage() {
               <div className="text-5xl mb-4">🚚</div>
               <h3 className="text-2xl font-bold mb-4">توصيل سريع</h3>
               <p className="text-gray-600">
-                تكامل مع أفضل شركات التوصيل
-                Yalidine, Zr Express, JetExpress
+                تكامل مع اكثر من 50 شركة توصيل رفع طلباتك بكل سهولة تامة
               </p>
             </div>
 
@@ -210,6 +219,54 @@ export default function HomePage() {
                 يعمل على جميع الأجهزة
                 موبايل، تابلت، كمبيوتر
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Delivery Companies Section */}
+      <section className="py-16 bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              شركاؤنا في التوصيل 🚚
+            </h2>
+            <p className="text-xl text-gray-600">
+              تكامل مع أكثر من 50 شركة توصيل - رفع طلباتك بكل سهولة تامة
+            </p>
+          </div>
+          <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+            <div className="relative w-full h-64">
+              <Image
+                src="/images/delivery-companies.png"
+                alt="شركات التوصيل المتعاونة معنا"
+                fill
+                className="object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Integration Platforms Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              التكامل مع المنصات الرقمية 🔗
+            </h2>
+            <p className="text-xl text-gray-600">
+              اربط متجرك مع Google Sheets، Facebook Pixel، TikTok Pixel وغيرها
+            </p>
+          </div>
+          <div className="max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-blue-50 p-8 rounded-2xl shadow-lg">
+            <div className="relative w-full h-64">
+              <Image
+                src="/images/integrate-platforms.png"
+                alt="التكامل مع منصات التواصل الاجتماعي وأدوات التسويق"
+                fill
+                className="object-contain"
+              />
             </div>
           </div>
         </div>
