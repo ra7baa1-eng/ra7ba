@@ -68,6 +68,12 @@ export default function StorePage() {
   const [storeInfo, setStoreInfo] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [storeDescription, setStoreDescription] = useState('');
+  const [storeAddress, setStoreAddress] = useState('');
+  const [supportEmail, setSupportEmail] = useState('');
+  const [supportPhone, setSupportPhone] = useState('');
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+  const [offersEnabled, setOffersEnabled] = useState(true);
 
   useEffect(() => {
     loadProducts();
@@ -75,6 +81,23 @@ export default function StorePage() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
+    // استرجاع بيانات المتجر من التخزين المحلي
+    try {
+      const g = localStorage.getItem('ra7ba:settings:general');
+      if (g) {
+        const gj = JSON.parse(g);
+        if (gj.storeDescription) setStoreDescription(gj.storeDescription);
+        if (gj.storeAddress) setStoreAddress(gj.storeAddress);
+        if (gj.supportEmail) setSupportEmail(gj.supportEmail);
+        if (gj.supportPhone) setSupportPhone(gj.supportPhone);
+      }
+      const features = localStorage.getItem('ra7ba:settings:features');
+      if (features) {
+        const fj = JSON.parse(features);
+        if (typeof fj.showReviews === 'boolean') setReviewsEnabled(fj.showReviews);
+        if (typeof fj.showOffers === 'boolean') setOffersEnabled(fj.showOffers);
+      }
+    } catch {}
   }, []);
 
   const loadProducts = async () => {
@@ -175,12 +198,9 @@ export default function StorePage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-lg">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.35)]">
                   <ShoppingBag size={24} />
                 </div>
-                <Badge className="absolute -bottom-2 left-1/2 -translate-x-1/2 shadow-sm">
-                  موثوق 100%
-                </Badge>
               </div>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -212,10 +232,36 @@ export default function StorePage() {
               </Button>
             </div>
           </div>
+          {/* تنقّل صفحات المتجر */}
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <a href="#top" className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">الرئيسية</a>
+            <a href="#categories" className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">التصنيفات</a>
+            <a href={`/store/${params.subdomain}/privacy`} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">سياسة الخصوصية</a>
+            <a href={`/store/${params.subdomain}/support`} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">الدعم</a>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-10 space-y-12">
+        {/* وصف المتجر والعنوان */}
+        {(storeDescription || storeAddress) && (
+          <section className="rounded-3xl border border-slate-100 bg-white/80 p-6 shadow-lg">
+            <div className="grid gap-4 md:grid-cols-2">
+              {storeDescription && (
+                <div>
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">وصف المتجر</h3>
+                  <p className="text-slate-600 leading-relaxed">{storeDescription}</p>
+                </div>
+              )}
+              {storeAddress && (
+                <div>
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">العنوان</h3>
+                  <p className="text-slate-600">{storeAddress}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
         {heroProduct ? (
           <motion.section
             variants={fadeIn}
@@ -371,7 +417,7 @@ export default function StorePage() {
           </Card>
         </section>
 
-        <section className="space-y-8">
+        <section id="categories" className="space-y-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-2">
               <h3 className="text-3xl font-black text-slate-900">استكشف تشكيلتنا</h3>
@@ -498,64 +544,68 @@ export default function StorePage() {
           </motion.div>
         </section>
 
-        <section className="grid gap-6 rounded-3xl bg-white/70 p-8 shadow-lg lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-slate-900">آراء عملائنا</h3>
-              <Badge className="bg-emerald-50 text-emerald-600">
-                رضا 98%
-              </Badge>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {['مريم', 'أمين', 'خولة', 'سامي'].map((customer) => (
-                <Card key={customer} className="rounded-2xl border border-slate-100 bg-white/80 p-5 shadow-sm">
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-slate-800">{customer}</p>
-                        <p className="text-xs text-slate-400">عميل رحبة</p>
-                      </div>
-                      <div className="flex items-center gap-1 text-amber-400">
-                        {[...Array(5)].map((_, index) => (
-                          <Star key={index} size={16} fill="currentColor" />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm leading-relaxed text-slate-500">
-                      تجربة مميزة جداً! المنتجات وصلت بسرعة وبجودة ممتازة. خدمة العملاء كانت متجاوبة وودودة.
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-          <Card className="h-full rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-white p-6 shadow-md">
-            <CardHeader>
-              <Badge className="bg-primary-600 text-white">عروض الموسم</Badge>
-              <CardTitle className="text-2xl text-slate-900">عروض حصرية</CardTitle>
-              <CardDescription className="text-slate-500">
-                استفد من خصومات تصل إلى 35% على باقات المنتجات المختارة لمدة محدودة.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-600">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary-500" />
-                منتجات أصلية مع ضمان شامل
+        {(reviewsEnabled || offersEnabled) && (
+          <section className="grid gap-6 rounded-3xl bg-white/70 p-8 shadow-lg lg:grid-cols-3">
+            {reviewsEnabled && (
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-slate-900">آراء عملائنا</h3>
+                  <Badge className="bg-emerald-50 text-emerald-600">رضا 98%</Badge>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {['مريم', 'أمين', 'خولة', 'سامي'].map((customer) => (
+                    <Card key={customer} className="rounded-2xl border border-slate-100 bg-white/80 p-5 shadow-sm">
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-slate-800">{customer}</p>
+                            <p className="text-xs text-slate-400">عميل رحبة</p>
+                          </div>
+                          <div className="flex items-center gap-1 text-amber-400">
+                            {[...Array(5)].map((_, index) => (
+                              <Star key={index} size={16} fill="currentColor" />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-sm leading-relaxed text-slate-500">
+                          تجربة مميزة جداً! المنتجات وصلت بسرعة وبجودة ممتازة. خدمة العملاء كانت متجاوبة وودودة.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-primary-500" />
-                توصيل مجاني للطلبات فوق 10,000 دج
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary-500" />
-                خدمة ما بعد البيع ممتازة
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="h-11 w-full rounded-xl">اكتشف الخصومات الآن</Button>
-            </CardFooter>
-          </Card>
-        </section>
+            )}
+            {offersEnabled && (
+              <Card className="h-full rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-white p-6 shadow-md">
+                <CardHeader>
+                  <Badge className="bg-primary-600 text-white">عروض الموسم</Badge>
+                  <CardTitle className="text-2xl text-slate-900">عروض حصرية</CardTitle>
+                  <CardDescription className="text-slate-500">
+                    استفد من خصومات تصل إلى 35% على باقات المنتجات المختارة لمدة محدودة.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary-500" />
+                    منتجات أصلية مع ضمان شامل
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary-500" />
+                    توصيل مجاني للطلبات فوق 10,000 دج
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary-500" />
+                    خدمة ما بعد البيع ممتازة
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button className="h-11 w-full rounded-xl">اكتشف الخصومات الآن</Button>
+                </CardFooter>
+              </Card>
+            )}
+          </section>
+        )}
       </main>
 
       <AnimatePresence>
