@@ -10,6 +10,7 @@ import { Package, Plus, Upload, X, Image as ImageIcon, Bold, Italic, List, Link2
 import ProductPreview from '@/components/products/ProductPreview';
 import ImageUploader from '@/components/products/ImageUploader';
 import VariantsTable from '@/components/products/VariantsTable';
+import RichTextEditor from '@/components/editor/RichTextEditor';
 
 export default function MerchantProducts() {
   const router = useRouter();
@@ -324,19 +325,6 @@ export default function MerchantProducts() {
     }
   };
 
-  const insertTextAtCursor = (textarea: HTMLTextAreaElement, before: string, after: string = '') => {
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = formData.description || '';
-    const selectedText = text.substring(start, end);
-    const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
-    setFormData({ ...formData, description: newText });
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
-    }, 0);
-  };
-
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('هل تريد حذف هذا المنتج؟')) return;
 
@@ -487,145 +475,17 @@ export default function MerchantProducts() {
                 />
               </div>
 
-              {/* Rich Text Description */}
+              {/* Rich Text Description - WYSIWYG Editor */}
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   الوصف التفصيلي
                 </label>
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                  {/* Advanced Toolbar */}
-                  <div className="bg-gray-50 border-b px-3 py-2 flex flex-wrap gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '**', '**');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="عريض"
-                    >
-                      <Bold className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '*', '*');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="مائل"
-                    >
-                      <Italic className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '__', '__');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="تسطير"
-                    >
-                      <Underline className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '~~', '~~');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="يتوسطه خط"
-                    >
-                      <Strikethrough className="w-4 h-4" />
-                    </button>
-                    <div className="w-px h-6 bg-gray-300 mx-1"></div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '# ', '');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="عنوان"
-                    >
-                      <Heading className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '\n• ', '');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="قائمة نقطية"
-                    >
-                      <List className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '\n1. ', '');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="قائمة مرقمة"
-                    >
-                      <ListOrdered className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '> ', '');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="اقتباس"
-                    >
-                      <Quote className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '---\n', '');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="خط فاصل"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '[', '](url)');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="رابط"
-                    >
-                      <Link2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const textarea = document.getElementById('desc') as HTMLTextAreaElement;
-                        insertTextAtCursor(textarea, '`', '`');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded transition"
-                      title="كود"
-                    >
-                      <Code className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <textarea
-                    id="desc"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[200px] resize-y"
-                    placeholder="اكتب وصف المنتج بالتفصيل... يمكنك استخدام التنسيقات المتقدمة"
-                  />
-                </div>
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  placeholder="اكتب وصف المنتج بالتفصيل... استخدم شريط الأدوات للتنسيق وإضافة الصور"
+                  height="350px"
+                />
               </div>
 
               {/* Images Upload */}
