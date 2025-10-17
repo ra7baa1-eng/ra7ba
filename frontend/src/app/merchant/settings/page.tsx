@@ -93,13 +93,30 @@ export default function MerchantSettingsComplete() {
     enabled: true,
     defaultFee: '',
     freeThreshold: '',
-    perWilayaFees: [] as Array<{ wilaya: string; fee: string }>,
+    // لكل صف: ولاية/دائرة/بلدية + الأسعار
+    perWilayaFees: [] as Array<{
+      code: string; // wilaya code
+      name: string; // wilaya name
+      daira?: string;
+      commune?: string;
+      price: string;
+      stopDesk: string;
+      address: string;
+      enabled: boolean;
+    }>,
   });
 
   // قائمة الولايات بالعربية (جلب ديناميكي)
-  const [wilayas, setWilayas] = useState<string[]>([]);
+  const [wilayas, setWilayas] = useState<Array<{ code: string; name: string }>>([]);
+  const [dairasByWilaya, setDairasByWilaya] = useState<Record<string, string[]>>({});
+  const [communesByKey, setCommunesByKey] = useState<Record<string, string[]>>({}); // key: `${code}:${daira}`
   const [selectedWilaya, setSelectedWilaya] = useState<string>('');
+  const [selectedDaira, setSelectedDaira] = useState<string>('');
+  const [selectedCommune, setSelectedCommune] = useState<string>('');
   const [wilayaFee, setWilayaFee] = useState<string>('');
+  const [wilayaStopDesk, setWilayaStopDesk] = useState<string>('');
+  const [wilayaAddress, setWilayaAddress] = useState<string>('');
+  const [searchWilaya, setSearchWilaya] = useState<string>('');
 
   // مراجع ومديرو ملفات الشعار والبنر
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -127,16 +144,68 @@ export default function MerchantSettingsComplete() {
       try {
         const res = await fetch('https://raw.githubusercontent.com/othmanus/algeria-cities/master/json/ar/algeria_cities.json');
         const data = await res.json();
-        // محاولة اكتشاف الحقل المناسب لاسم الولاية
-        const names = new Set<string>();
+        // نبني خرائط: ولايات -> دوائر -> بلديات
+        const map = new Map<string, { code: string; name: string }>();
+        const dairas: Record<string, Set<string>> = {};
+        const communes: Record<string, Set<string>> = {};
+        const getWilayaName = (item: any) => item?.wilaya_name_ar || item?.wilaya_name || item?.wilaya || item?.Wilaya || item?.ولاية || '';
+        const getWilayaCode = (item: any) => String(item?.wilaya_code || item?.code || item?.WilayaCode || item?.رمز || '');
+        const getDaira = (item: any) => item?.daira_name_ar || item?.daira || item?.Daira || item?.الدائرة || '';
+        const getCommune = (item: any) => item?.commune_name_ar || item?.commune || item?.Baladiya || item?.البلدية || '';
         if (Array.isArray(data)) {
           for (const item of data) {
-            const name = item?.wilaya_name_ar || item?.wilaya_name || item?.wilaya || item?.Wilaya || item?.ولاية;
-            if (typeof name === 'string' && name.trim()) names.add(name.trim());
+            const wName = String(getWilayaName(item) || '').trim();
+            let wCode = String(getWilayaCode(item) || '').trim();
+            if (!wName) continue;
+            if (!wCode) {
+              const w = item?.wilaya || item?.WilayaInfo || {};
+              const c2 = String(w?.code || w?.wilaya_code || '').trim();
+              if (c2) wCode = c2;
+            }
+            if (!map.has(wName)) map.set(wName, { code: wCode || '', name: wName });
+
+            const dName = String(getDaira(item) || '').trim();
+            const cName = String(getCommune(item) || '').trim();
+            const key = wCode || wName;
+            if (dName) {
+              if (!dairas[key]) dairas[key] = new Set<string>();
+              dairas[key].add(dName);
+              if (cName) {
+                const ck = `${key}:${dName}`;
+                if (!communes[ck]) communes[ck] = new Set<string>();
+                communes[ck].add(cName);
+              }
+            }
           }
         }
-        const list = Array.from(names).sort((a, b) => a.localeCompare(b, 'ar'));
-        if (!cancelled) setWilayas(list);
+        let list = Array.from(map.values());
+        // في حال لم نجد أكواد، عيّن تسلسلياً 1..n كسلاسل
+        if (!list.some(x => x.code)) {
+          list = list
+            .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+            .map((x, i) => ({ ...x, code: String(i + 1) }));
+        } else {
+          // رتب حسب الكود إن توفّر
+          list = list.sort((a, b) => Number(a.code) - Number(b.code));
+        }
+        if (!cancelled) {
+          setWilayas(list);
+          // حوّل Sets إلى Arrays مرتبة
+          const dObj: Record<string, string[]> = {};
+          Object.entries(dairas).forEach(([k, set]) => { dObj[k] = Array.from(set as Set<string>).sort((a,b)=>a.localeCompare(b,'ar')); });
+          const cObj: Record<string, string[]> = {};
+          Object.entries(communes).forEach(([k, set]) => { cObj[k] = Array.from(set as Set<string>).sort((a,b)=>a.localeCompare(b,'ar')); });
+          setDairasByWilaya(dObj);
+          setCommunesByKey(cObj);
+          // تهيئة رسوم الولايات إن لم تكن موجودة
+          setShippingSettings(prev => {
+            if (prev.perWilayaFees.length > 0) return prev;
+            return {
+              ...prev,
+              perWilayaFees: list.map(w => ({ code: w.code, name: w.name, price: '', stopDesk: '', address: '', enabled: true }))
+            };
+          });
+        }
       } catch (e) {
         // في حال الفشل لا نكسر الواجهة، يمكن إضافة لاحقاً مصدر بديل
         if (!cancelled) setWilayas([]);
@@ -454,17 +523,45 @@ export default function MerchantSettingsComplete() {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-gray-900">رسوم لكل ولاية</h3>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-7 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">الولاية</label>
                       <select
                         value={selectedWilaya}
-                        onChange={(e) => setSelectedWilaya(e.target.value)}
+                        onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedDaira(''); setSelectedCommune(''); }}
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white"
                       >
                         <option value="">اختر الولاية</option>
                         {wilayas.map((w) => (
-                          <option key={w} value={w}>{w}</option>
+                          <option key={w.code + w.name} value={w.code}>{w.code} - {w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">الدائرة</label>
+                      <select
+                        value={selectedDaira}
+                        onChange={(e) => { setSelectedDaira(e.target.value); setSelectedCommune(''); }}
+                        disabled={!selectedWilaya}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white disabled:bg-gray-100"
+                      >
+                        <option value="">الكل</option>
+                        {(dairasByWilaya[selectedWilaya] || []).map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">البلدية</label>
+                      <select
+                        value={selectedCommune}
+                        onChange={(e) => setSelectedCommune(e.target.value)}
+                        disabled={!selectedWilaya}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white disabled:bg-gray-100"
+                      >
+                        <option value="">الكل</option>
+                        {(communesByKey[`${selectedWilaya}:${selectedDaira}`] || []).map((c) => (
+                          <option key={c} value={c}>{c}</option>
                         ))}
                       </select>
                     </div>
@@ -478,16 +575,43 @@ export default function MerchantSettingsComplete() {
                         placeholder="مثال: 600"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Stop Desk (د.ج)</label>
+                      <input
+                        type="number"
+                        value={wilayaStopDesk}
+                        onChange={(e) => setWilayaStopDesk(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        placeholder="مثال: 400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Adresse (د.ج)</label>
+                      <input
+                        type="number"
+                        value={wilayaAddress}
+                        onChange={(e) => setWilayaAddress(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        placeholder="مثال: 500"
+                      />
+                    </div>
                     <div className="flex items-end">
                       <button
                         onClick={() => {
-                          if (!selectedWilaya || !wilayaFee) return;
-                          const existsIdx = shippingSettings.perWilayaFees.findIndex(x => x.wilaya === selectedWilaya);
+                          if (!selectedWilaya) return;
+                          const existsIdx = shippingSettings.perWilayaFees.findIndex(x => x.code === selectedWilaya);
                           const updated = [...shippingSettings.perWilayaFees];
-                          if (existsIdx >= 0) updated[existsIdx] = { wilaya: selectedWilaya, fee: wilayaFee };
-                          else updated.push({ wilaya: selectedWilaya, fee: wilayaFee });
+                          const targetWilaya = wilayas.find(w => w.code === selectedWilaya);
+                          const name = targetWilaya?.name || '';
+                          const row = { code: selectedWilaya, name, daira: selectedDaira || undefined, commune: selectedCommune || undefined, price: wilayaFee || '', stopDesk: wilayaStopDesk || '', address: wilayaAddress || '', enabled: true };
+                          // إن كان إدخالاً على مستوى بلدية/دائرة، نعتبر المفتاح (code+daira+commune)
+                          const idx = updated.findIndex(r => r.code === row.code && (r.daira||'') === (row.daira||'') && (r.commune||'') === (row.commune||''));
+                          if (idx >= 0) updated[idx] = { ...updated[idx], ...row };
+                          else updated.push(row);
                           setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
                           setWilayaFee('');
+                          setWilayaStopDesk('');
+                          setWilayaAddress('');
                         }}
                         className="w-full px-4 py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700"
                       >
@@ -496,20 +620,79 @@ export default function MerchantSettingsComplete() {
                     </div>
                   </div>
 
+                  <div>
+                    <input
+                      type="text"
+                      value={searchWilaya}
+                      onChange={(e) => setSearchWilaya(e.target.value)}
+                      placeholder="بحث عن ولاية..."
+                      className="w-full mb-3 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
+                  </div>
+
                   <div className="overflow-x-auto">
                     <table className="min-w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">رقم الولاية</th>
                           <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">الولاية</th>
-                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">الرسوم (د.ج)</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">الدائرة</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">البلدية</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">السعر</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Stop Desk</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Adresse</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">مفعل؟</th>
                           <th className="px-4 py-3"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {shippingSettings.perWilayaFees.map((row, idx) => (
+                        {shippingSettings.perWilayaFees
+                          .filter(r => !searchWilaya || r.name.includes(searchWilaya) || r.code.includes(searchWilaya))
+                          .map((row, idx) => (
                           <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3">{row.wilaya}</td>
-                            <td className="px-4 py-3">{row.fee}</td>
+                            <td className="px-4 py-3 font-mono">{row.code}</td>
+                            <td className="px-4 py-3">{row.name}</td>
+                            <td className="px-4 py-3">{row.daira || '-'}</td>
+                            <td className="px-4 py-3">{row.commune || '-'}</td>
+                            <td className="px-4 py-3">
+                              <input type="number" value={row.price}
+                                onChange={(e) => {
+                                  const updated = [...shippingSettings.perWilayaFees];
+                                  updated[idx] = { ...row, price: e.target.value };
+                                  setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                                }}
+                                className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input type="number" value={row.stopDesk}
+                                onChange={(e) => {
+                                  const updated = [...shippingSettings.perWilayaFees];
+                                  updated[idx] = { ...row, stopDesk: e.target.value };
+                                  setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                                }}
+                                className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input type="number" value={row.address}
+                                onChange={(e) => {
+                                  const updated = [...shippingSettings.perWilayaFees];
+                                  updated[idx] = { ...row, address: e.target.value };
+                                  setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                                }}
+                                className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => {
+                                  const updated = [...shippingSettings.perWilayaFees];
+                                  updated[idx] = { ...row, enabled: !row.enabled };
+                                  setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                                }}
+                                className={`px-3 py-2 rounded-lg text-sm font-bold ${row.enabled ? 'text-green-600 hover:bg-green-50' : 'text-gray-500 hover:bg-gray-50'}`}
+                              >
+                                {row.enabled ? 'مفعل' : 'غير مفعل'}
+                              </button>
+                            </td>
                             <td className="px-4 py-3 text-left">
                               <button
                                 onClick={() => {
