@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Store, Palette, Link2, Bell, Save, Upload, Globe, Smartphone,
   Eye, EyeOff, Check, Zap, Share2, MessageSquare, Mail, Image as ImageIcon,
+  Truck,
 } from 'lucide-react';
 
 // المكونات المساعدة
@@ -87,6 +88,19 @@ export default function MerchantSettingsComplete() {
     showOffers: true,
   });
 
+  // إعدادات الشحن
+  const [shippingSettings, setShippingSettings] = useState({
+    enabled: true,
+    defaultFee: '',
+    freeThreshold: '',
+    perWilayaFees: [] as Array<{ wilaya: string; fee: string }>,
+  });
+
+  // قائمة الولايات بالعربية (جلب ديناميكي)
+  const [wilayas, setWilayas] = useState<string[]>([]);
+  const [selectedWilaya, setSelectedWilaya] = useState<string>('');
+  const [wilayaFee, setWilayaFee] = useState<string>('');
+
   // مراجع ومديرو ملفات الشعار والبنر
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +119,32 @@ export default function MerchantSettingsComplete() {
       };
       reader.readAsDataURL(file);
     }
+
+  // جلب الولايات بالعربية من GitHub (تجنّب إدراج بيانات ضخمة محلياً)
+  useEffect(() => {
+    let cancelled = false;
+    const loadWilayas = async () => {
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/othmanus/algeria-cities/master/json/ar/algeria_cities.json');
+        const data = await res.json();
+        // محاولة اكتشاف الحقل المناسب لاسم الولاية
+        const names = new Set<string>();
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            const name = item?.wilaya_name_ar || item?.wilaya_name || item?.wilaya || item?.Wilaya || item?.ولاية;
+            if (typeof name === 'string' && name.trim()) names.add(name.trim());
+          }
+        }
+        const list = Array.from(names).sort((a, b) => a.localeCompare(b, 'ar'));
+        if (!cancelled) setWilayas(list);
+      } catch (e) {
+        // في حال الفشل لا نكسر الواجهة، يمكن إضافة لاحقاً مصدر بديل
+        if (!cancelled) setWilayas([]);
+      }
+    };
+    loadWilayas();
+    return () => { cancelled = true; };
+  }, []);
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,6 +168,7 @@ export default function MerchantSettingsComplete() {
       const d = localStorage.getItem('ra7ba:settings:design');
       const i = localStorage.getItem('ra7ba:settings:integrations');
       const n = localStorage.getItem('ra7ba:settings:notifications');
+      const sh = localStorage.getItem('ra7ba:settings:shipping');
       const f = localStorage.getItem('ra7ba:settings:features');
       const lp = localStorage.getItem('ra7ba:settings:logoPreview');
       const bp = localStorage.getItem('ra7ba:settings:bannerPreview');
@@ -135,6 +176,7 @@ export default function MerchantSettingsComplete() {
       if (d) setDesignSettings((prev: any) => ({ ...prev, ...JSON.parse(d) }));
       if (i) setIntegrationSettings((prev: any) => ({ ...prev, ...JSON.parse(i) }));
       if (n) setNotificationSettings((prev: any) => ({ ...prev, ...JSON.parse(n) }));
+      if (sh) setShippingSettings((prev: any) => ({ ...prev, ...JSON.parse(sh) }));
       if (f) setFeaturesSettings((prev: any) => ({ ...prev, ...JSON.parse(f) }));
       if (lp) setLogoPreviewUrl(lp);
       if (bp) setBannerPreviewUrl(bp);
@@ -182,6 +224,8 @@ export default function MerchantSettingsComplete() {
           storageKey = 'ra7ba:settings:notifications';
         } else if (endpoint === '/api/settings/features') {
           storageKey = 'ra7ba:settings:features';
+        } else if (endpoint === '/api/settings/shipping') {
+          storageKey = 'ra7ba:settings:shipping';
         }
         if (storageKey) localStorage.setItem(storageKey, JSON.stringify(payload));
       } catch {}
@@ -217,6 +261,7 @@ export default function MerchantSettingsComplete() {
               <TabButton active={activeTab === 'design'} icon={Palette} label="التصميم" onClick={() => setActiveTab('design')} />
               <TabButton active={activeTab === 'integrations'} icon={Link2} label="التكاملات" onClick={() => setActiveTab('integrations')} />
               <TabButton active={activeTab === 'notifications'} icon={Bell} label="الإشعارات" onClick={() => setActiveTab('notifications')} />
+              <TabButton active={activeTab === 'shipping'} icon={Truck} label="الشحن" onClick={() => setActiveTab('shipping')} />
             </nav>
           </div>
 
@@ -366,6 +411,131 @@ export default function MerchantSettingsComplete() {
                 <button onClick={() => saveSettings('/api/settings/general', generalSettings)} disabled={saving}
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
                   <Save className="w-5 h-5" /> {saving ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+              </div>
+            )}
+
+            {/* إعدادات الشحن */}
+            {activeTab === 'shipping' && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <Truck className="w-6 h-6" /> إعدادات الشحن
+                </h2>
+
+                <ToggleSwitch
+                  enabled={shippingSettings.enabled}
+                  onChange={() => setShippingSettings({ ...shippingSettings, enabled: !shippingSettings.enabled })}
+                  title="تفعيل الشحن"
+                  description="تفعيل أو تعطيل خيار الشحن في واجهة الطلب"
+                />
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">رسوم الشحن الأساسية (د.ج)</label>
+                    <input
+                      type="number"
+                      value={shippingSettings.defaultFee}
+                      onChange={(e) => setShippingSettings({ ...shippingSettings, defaultFee: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="مثال: 400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">حد الشحن المجاني (د.ج)</label>
+                    <input
+                      type="number"
+                      value={shippingSettings.freeThreshold}
+                      onChange={(e) => setShippingSettings({ ...shippingSettings, freeThreshold: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      placeholder="مثال: 5000"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-gray-900">رسوم لكل ولاية</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">الولاية</label>
+                      <select
+                        value={selectedWilaya}
+                        onChange={(e) => setSelectedWilaya(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white"
+                      >
+                        <option value="">اختر الولاية</option>
+                        {wilayas.map((w) => (
+                          <option key={w} value={w}>{w}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">الرسوم (د.ج)</label>
+                      <input
+                        type="number"
+                        value={wilayaFee}
+                        onChange={(e) => setWilayaFee(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        placeholder="مثال: 600"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => {
+                          if (!selectedWilaya || !wilayaFee) return;
+                          const existsIdx = shippingSettings.perWilayaFees.findIndex(x => x.wilaya === selectedWilaya);
+                          const updated = [...shippingSettings.perWilayaFees];
+                          if (existsIdx >= 0) updated[existsIdx] = { wilaya: selectedWilaya, fee: wilayaFee };
+                          else updated.push({ wilaya: selectedWilaya, fee: wilayaFee });
+                          setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                          setWilayaFee('');
+                        }}
+                        className="w-full px-4 py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700"
+                      >
+                        إضافة / تحديث
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">الولاية</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">الرسوم (د.ج)</th>
+                          <th className="px-4 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {shippingSettings.perWilayaFees.map((row, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3">{row.wilaya}</td>
+                            <td className="px-4 py-3">{row.fee}</td>
+                            <td className="px-4 py-3 text-left">
+                              <button
+                                onClick={() => {
+                                  const updated = shippingSettings.perWilayaFees.filter((_, i) => i !== idx);
+                                  setShippingSettings({ ...shippingSettings, perWilayaFees: updated });
+                                }}
+                                className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold"
+                              >
+                                حذف
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {shippingSettings.perWilayaFees.length === 0 && (
+                          <tr>
+                            <td className="px-4 py-6 text-gray-500" colSpan={3}>لا توجد رسوم مخصصة بعد</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <button onClick={() => saveSettings('/api/settings/shipping', shippingSettings)} disabled={saving}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-bold rounded-xl shadow-lg">
+                  <Save className="w-5 h-5" /> {saving ? 'جاري الحفظ...' : 'حفظ إعدادات الشحن'}
                 </button>
               </div>
             )}
