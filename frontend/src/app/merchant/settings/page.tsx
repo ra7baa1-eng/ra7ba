@@ -72,7 +72,7 @@ export default function MerchantSettingsComplete() {
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true, telegramBotToken: '', telegramChatId: '',
+    emailNotifications: true, telegramChatId: '',
     newOrderMessage: 'تم استلام طلب جديد!',
   });
 
@@ -265,9 +265,9 @@ export default function MerchantSettingsComplete() {
                     <MessageSquare className="w-5 h-5" /> Telegram Bot
                   </h3>
                   <div className="space-y-4">
-                    <InputField label="Bot Token" value={notificationSettings.telegramBotToken}
-                      onChange={(e: any) => setNotificationSettings({...notificationSettings, telegramBotToken: e.target.value})}
-                      placeholder="أدخل Telegram Bot Token" />
+                    <div className="mb-1 text-sm text-gray-700">
+                      البوت المستخدم: <a href="https://t.me/ra7ba1_bot" target="_blank" rel="noopener" className="text-blue-600 hover:underline">@ra7ba1_bot</a>
+                    </div>
                     <InputField label="Chat ID" value={notificationSettings.telegramChatId}
                       onChange={(e: any) => setNotificationSettings({...notificationSettings, telegramChatId: e.target.value})}
                       placeholder="أدخل Chat ID" />
