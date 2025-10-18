@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Store, Palette, Link2, Bell, Save, Upload, Globe, Smartphone,
   Eye, EyeOff, Check, Zap, Share2, MessageSquare, Mail, Image as ImageIcon,
-  Truck, Shield,
+  Truck, Shield, Sparkles,
 } from 'lucide-react';
 
 // المكونات المساعدة
@@ -335,6 +335,12 @@ export default function MerchantSettingsComplete() {
               <TabButton active={activeTab === 'integrations'} icon={Link2} label="التكاملات" onClick={() => setActiveTab('integrations')} />
               <TabButton active={activeTab === 'notifications'} icon={Bell} label="الإشعارات" onClick={() => setActiveTab('notifications')} />
               <TabButton active={activeTab === 'shipping'} icon={Truck} label="الشحن" onClick={() => setActiveTab('shipping')} />
+              <a href="/merchant/settings/storefront" className="block">
+                <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-semibold transition-all duration-300 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <Sparkles className="w-5 h-5" />
+                  واجهة المتجر
+                </div>
+              </a>
               <a href="/merchant/settings/privacy" className="block">
                 <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-semibold transition-all duration-300 text-gray-700 hover:bg-gray-50 cursor-pointer">
                   <Shield className="w-5 h-5" />
