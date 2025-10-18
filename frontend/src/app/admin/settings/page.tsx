@@ -310,7 +310,15 @@ export default function AdminSettings() {
 }
 
 // Component for feature toggle
-function FeatureToggle({ icon, title, description, enabled, onChange }: any) {
+interface FeatureToggleProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onChange: (value: boolean) => void;
+}
+
+function FeatureToggle({ icon, title, description, enabled, onChange }: FeatureToggleProps) {
   return (
     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
       <div className="flex items-center gap-4">
