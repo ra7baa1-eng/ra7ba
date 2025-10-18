@@ -19,55 +19,21 @@ export default function AdminProducts() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // TODO: استدعاء API لجلب المنتجات والتجار
-      // const { data: productsData } = await adminApi.getAllProducts();
-      // const { data: tenantsData } = await adminApi.getTenants();
-      // setProducts(productsData);
-      // setTenants(tenantsData);
-      
-      // بيانات تجريبية
-      setProducts([
-        {
-          id: '1',
-          name: 'iPhone 15 Pro Max',
-          nameAr: 'ايفون 15 برو ماكس',
-          price: 350000,
-          stock: 15,
-          isActive: true,
-          tenant: { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-          category: 'الهواتف الذكية',
-          createdAt: '2024-01-15',
-        },
-        {
-          id: '2',
-          name: 'Samsung Galaxy S24',
-          nameAr: 'سامسونج جالاكسي S24',
-          price: 280000,
-          stock: 8,
-          isActive: true,
-          tenant: { id: '2', name: 'متجر الإلكترونيات', subdomain: 'electronics' },
-          category: 'الهواتف الذكية',
-          createdAt: '2024-01-14',
-        },
-        {
-          id: '3',
-          name: 'MacBook Pro 2024',
-          nameAr: 'ماك بوك برو 2024',
-          price: 450000,
-          stock: 0,
-          isActive: false,
-          tenant: { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-          category: 'الحواسيب',
-          createdAt: '2024-01-13',
-        },
+      const [productsResponse, tenantsResponse] = await Promise.all([
+        adminApi.getAllProducts({ search: searchTerm, tenantId: filterTenant, status: filterStatus }),
+        adminApi.getTenants(),
       ]);
       
-      setTenants([
-        { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-        { id: '2', name: 'متجر الإلكترونيات', subdomain: 'electronics' },
-      ]);
+      setProducts(productsResponse.data.data.map((p: any) => ({
+        ...p,
+        category: p.category?.nameAr || 'غير مصنف',
+        createdAt: new Date(p.createdAt).toLocaleDateString('ar-DZ'),
+      })));
+      
+      setTenants(tenantsResponse.data.tenants || []);
     } catch (error) {
       console.error('Error loading data:', error);
+      alert('حدث خطأ في تحميل البيانات');
     } finally {
       setLoading(false);
     }
@@ -86,6 +52,18 @@ export default function AdminProducts() {
   const totalValue = filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0);
   const activeProducts = filteredProducts.filter(p => p.isActive).length;
   const outOfStock = filteredProducts.filter(p => p.stock === 0).length;
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`هل تريد حذف المنتج "${productName}"؟`)) return;
+    
+    try {
+      await adminApi.deleteProduct(productId);
+      alert('تم حذف المنتج بنجاح!');
+      loadData();
+    } catch (error) {
+      alert('حدث خطأ في حذف المنتج');
+    }
+  };
 
   if (loading) {
     return (
@@ -258,7 +236,10 @@ export default function AdminProducts() {
                       <button className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition">
+                      <button
+                        onClick={() => handleDeleteProduct(product.id, product.nameAr)}
+                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

@@ -1,57 +1,74 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Zap, Save, Shield, Package, ShoppingCart, CreditCard, Truck, Image, MessageSquare, Star } from 'lucide-react';
+import { adminApi } from '@/lib/api';
 
 export default function AdminSettings() {
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
-  // ميزات الخطط
-  const [planFeatures, setPlanFeatures] = useState({
-    FREE: {
-      maxProducts: 50,
-      maxOrders: 100,
-      variants: false,
-      bulkPricing: false,
-      reviews: false,
-      seasonalOffers: false,
-      advancedSEO: false,
-      multipleImages: 5,
-      customDomain: false,
-      prioritySupport: false,
-    },
-    STANDARD: {
-      maxProducts: 200,
-      maxOrders: 500,
-      variants: true,
-      bulkPricing: true,
-      reviews: true,
-      seasonalOffers: true,
-      advancedSEO: true,
-      multipleImages: 10,
-      customDomain: false,
-      prioritySupport: false,
-    },
-    PRO: {
-      maxProducts: -1, // unlimited
-      maxOrders: -1,
-      variants: true,
-      bulkPricing: true,
-      reviews: true,
-      seasonalOffers: true,
-      advancedSEO: true,
-      multipleImages: 20,
-      customDomain: true,
-      prioritySupport: true,
-    },
-  });
-
+  const [planFeatures, setPlanFeatures] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'STANDARD' | 'PRO'>('FREE');
+
+  useEffect(() => {
+    loadFeatures();
+  }, []);
+
+  const loadFeatures = async () => {
+    try {
+      setLoading(true);
+      const { data } = await adminApi.getPlanFeatures();
+      setPlanFeatures(data);
+    } catch (error) {
+      console.error('Error loading features:', error);
+      // Set defaults if API fails
+      setPlanFeatures({
+        FREE: {
+          maxProducts: 50,
+          maxOrders: 100,
+          variants: false,
+          bulkPricing: false,
+          reviews: false,
+          seasonalOffers: false,
+          advancedSEO: false,
+          multipleImages: 5,
+          customDomain: false,
+          prioritySupport: false,
+        },
+        STANDARD: {
+          maxProducts: 200,
+          maxOrders: 500,
+          variants: true,
+          bulkPricing: true,
+          reviews: true,
+          seasonalOffers: true,
+          advancedSEO: true,
+          multipleImages: 10,
+          customDomain: false,
+          prioritySupport: false,
+        },
+        PRO: {
+          maxProducts: -1,
+          maxOrders: -1,
+          variants: true,
+          bulkPricing: true,
+          reviews: true,
+          seasonalOffers: true,
+          advancedSEO: true,
+          multipleImages: 20,
+          customDomain: true,
+          prioritySupport: true,
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // TODO: API call to save settings
+      await adminApi.updatePlanFeatures(selectedPlan, planFeatures[selectedPlan]);
       alert('تم حفظ الإعدادات بنجاح! ✅');
     } catch (error) {
       alert('حدث خطأ في الحفظ');
@@ -69,6 +86,17 @@ export default function AdminSettings() {
       },
     });
   };
+
+  if (loading || !planFeatures) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentPlan = planFeatures[selectedPlan];
 

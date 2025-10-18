@@ -1,34 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Users, Download, Calendar, FileText } from 'lucide-react';
+import { adminApi } from '@/lib/api';
 
 export default function AdminReports() {
   const [period, setPeriod] = useState('month');
   const [reportType, setReportType] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [topMerchants, setTopMerchants] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
 
-  const stats = {
-    totalRevenue: 2450000,
-    revenueChange: 12.5,
-    totalOrders: 342,
-    ordersChange: 8.3,
-    totalProducts: 156,
-    productsChange: -2.1,
-    totalUsers: 89,
-    usersChange: 15.7,
+  useEffect(() => {
+    loadReports();
+  }, [period, reportType]);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      const { data } = await adminApi.getReports({ period, reportType });
+      setStats(data.stats);
+      setTopMerchants(data.topMerchants || []);
+      setTopProducts(data.topProducts || []);
+    } catch (error) {
+      console.error('Error loading reports:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const topMerchants = [
-    { id: '1', name: 'متجر التقنية', revenue: 850000, orders: 145, growth: 23.5 },
-    { id: '2', name: 'متجر الإلكترونيات', revenue: 650000, orders: 98, growth: 18.2 },
-    { id: '3', name: 'متجر الأزياء', revenue: 420000, orders: 67, growth: -5.3 },
-  ];
-
-  const topProducts = [
-    { id: '1', name: 'iPhone 15 Pro Max', sales: 45, revenue: 350000 },
-    { id: '2', name: 'Samsung Galaxy S24', sales: 38, revenue: 280000 },
-    { id: '3', name: 'MacBook Pro 2024', sales: 12, revenue: 450000 },
-  ];
+  if (loading || !stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

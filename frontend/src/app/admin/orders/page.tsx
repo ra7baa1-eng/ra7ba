@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Calendar, Eye, Package, TrendingUp, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { adminApi } from '@/lib/api';
 
 export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
@@ -18,52 +19,22 @@ export default function AdminOrders() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // بيانات تجريبية
-      setOrders([
-        {
-          id: '1',
-          orderNumber: 'ORD-2024-001',
-          customerName: 'أحمد محمد',
-          customerPhone: '+213555123456',
-          tenant: { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-          total: 350000,
-          status: 'PENDING',
-          wilaya: 'الجزائر',
-          createdAt: '2024-01-18 14:30',
-          items: 2,
-        },
-        {
-          id: '2',
-          orderNumber: 'ORD-2024-002',
-          customerName: 'فاطمة علي',
-          customerPhone: '+213666789012',
-          tenant: { id: '2', name: 'متجر الإلكترونيات', subdomain: 'electronics' },
-          total: 180000,
-          status: 'CONFIRMED',
-          wilaya: 'وهران',
-          createdAt: '2024-01-18 13:15',
-          items: 1,
-        },
-        {
-          id: '3',
-          orderNumber: 'ORD-2024-003',
-          customerName: 'خالد بن سعيد',
-          customerPhone: '+213777345678',
-          tenant: { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-          total: 95000,
-          status: 'DELIVERED',
-          wilaya: 'قسنطينة',
-          createdAt: '2024-01-17 10:00',
-          items: 3,
-        },
+      const [ordersResponse, tenantsResponse] = await Promise.all([
+        adminApi.getAllOrders({ search: searchTerm, tenantId: filterTenant, status: filterStatus }),
+        adminApi.getTenants(),
       ]);
-
-      setTenants([
-        { id: '1', name: 'متجر التقنية', subdomain: 'tech-store' },
-        { id: '2', name: 'متجر الإلكترونيات', subdomain: 'electronics' },
-      ]);
+      
+      setOrders(ordersResponse.data.data.map((o: any) => ({
+        ...o,
+        createdAt: new Date(o.createdAt).toLocaleString('ar-DZ'),
+        items: o.itemsCount || 0,
+        total: Number(o.total),
+      })));
+      
+      setTenants(tenantsResponse.data.tenants || []);
     } catch (error) {
       console.error('Error loading data:', error);
+      alert('حدث خطأ في تحميل البيانات');
     } finally {
       setLoading(false);
     }

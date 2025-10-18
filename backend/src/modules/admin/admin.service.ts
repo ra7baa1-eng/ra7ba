@@ -512,4 +512,533 @@ END $$;`;
       checkedAt: new Date().toISOString(),
     };
   }
+
+  // ==================== NEW ADMIN METHODS ====================
+
+  // Get all products across all tenants
+  async getAllProducts(filters: {
+    search?: string;
+    tenantId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { search, tenantId, status, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { nameAr: { contains: search } },
+        { sku: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (tenantId && tenantId !== 'all') {
+      where.tenantId = tenantId;
+    }
+
+    if (status && status !== 'all') {
+      where.isActive = status === 'active';
+    }
+
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              subdomain: true,
+            },
+          },
+          category: {
+            select: {
+              name: true,
+              nameAr: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      data: products,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Get all orders across all tenants
+  async getAllOrders(filters: {
+    search?: string;
+    tenantId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { search, tenantId, status, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { customerName: { contains: search } },
+        { customerPhone: { contains: search } },
+      ];
+    }
+
+    if (tenantId && tenantId !== 'all') {
+      where.tenantId = tenantId;
+    }
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              subdomain: true,
+            },
+          },
+          items: {
+            select: {
+              id: true,
+              productName: true,
+              quantity: true,
+              price: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      data: orders.map(order => ({
+        ...order,
+        itemsCount: order.items.length,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Get all users (merchants and customers)
+  async getAllUsers(filters: {
+    search?: string;
+    role?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { search, role, status, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+      ];
+    }
+
+    if (role && role !== 'all') {
+      where.role = role;
+    }
+
+    if (status && status !== 'all') {
+      where.isActive = status === 'active';
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              subdomain: true,
+              status: true,
+              _count: {
+                select: {
+                  products: true,
+                  orders: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              orders: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users.map(user => ({
+        ...user,
+        ordersCount: user._count.orders,
+        productsCount: user.tenant?._count?.products || 0,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Toggle user status
+  async toggleUserStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: !user.isActive },
+    });
+  }
+
+  // Delete product
+  async deleteProduct(productId: string) {
+    return this.prisma.product.delete({
+      where: { id: productId },
+    });
+  }
+
+  // Get reports and statistics
+  async getReports(filters: { period?: string; reportType?: string }) {
+    const { period = 'month', reportType = 'overview' } = filters;
+
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (period) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+    }
+
+    // Get statistics
+    const [
+      totalRevenue,
+      totalOrders,
+      totalProducts,
+      totalUsers,
+      previousRevenue,
+      previousOrders,
+    ] = await Promise.all([
+      this.prisma.order.aggregate({
+        where: { createdAt: { gte: startDate } },
+        _sum: { total: true },
+      }),
+      this.prisma.order.count({
+        where: { createdAt: { gte: startDate } },
+      }),
+      this.prisma.product.count(),
+      this.prisma.user.count(),
+      this.prisma.order.aggregate({
+        where: {
+          createdAt: {
+            gte: new Date(startDate.getTime() - (now.getTime() - startDate.getTime())),
+            lt: startDate,
+          },
+        },
+        _sum: { total: true },
+      }),
+      this.prisma.order.count({
+        where: {
+          createdAt: {
+            gte: new Date(startDate.getTime() - (now.getTime() - startDate.getTime())),
+            lt: startDate,
+          },
+        },
+      }),
+    ]);
+
+    const revenue = Number(totalRevenue._sum.total || 0);
+    const prevRevenue = Number(previousRevenue._sum.total || 1);
+    const revenueChange = ((revenue - prevRevenue) / prevRevenue) * 100;
+    const ordersChange = previousOrders > 0
+      ? ((totalOrders - previousOrders) / previousOrders) * 100
+      : 0;
+
+    const stats = {
+      totalRevenue: revenue,
+      revenueChange: parseFloat(revenueChange.toFixed(2)),
+      totalOrders,
+      ordersChange: parseFloat(ordersChange.toFixed(2)),
+      totalProducts,
+      productsChange: 0,
+      totalUsers,
+      usersChange: 0,
+    };
+
+    // Get top merchants
+    const topMerchants = await this.prisma.tenant.findMany({
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            orders: true,
+          },
+        },
+        orders: {
+          select: {
+            total: true,
+          },
+        },
+      },
+      orderBy: {
+        orders: {
+          _count: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    const merchantsWithRevenue = topMerchants.map(tenant => ({
+      id: tenant.id,
+      name: tenant.name,
+      orders: tenant._count.orders,
+      revenue: tenant.orders.reduce((sum, order) => sum + Number(order.total), 0),
+      growth: 0,
+    }));
+
+    // Get top products
+    const topProducts = await this.prisma.orderItem.groupBy({
+      by: ['productId', 'productName'],
+      _sum: {
+        quantity: true,
+        subtotal: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    const topProductsFormatted = topProducts.map(item => ({
+      id: item.productId,
+      name: item.productName,
+      sales: item._sum.quantity || 0,
+      revenue: Number(item._sum.subtotal || 0),
+    }));
+
+    return {
+      stats,
+      topMerchants: merchantsWithRevenue,
+      topProducts: topProductsFormatted,
+    };
+  }
+
+  // Get plan features settings
+  async getPlanFeatures() {
+    const settings = await this.prisma.setting.findMany({
+      where: {
+        key: {
+          in: ['plan_features_FREE', 'plan_features_STANDARD', 'plan_features_PRO'],
+        },
+      },
+    });
+
+    const features: any = {
+      FREE: {
+        maxProducts: 50,
+        maxOrders: 100,
+        variants: false,
+        bulkPricing: false,
+        reviews: false,
+        seasonalOffers: false,
+        advancedSEO: false,
+        multipleImages: 5,
+        customDomain: false,
+        prioritySupport: false,
+      },
+      STANDARD: {
+        maxProducts: 200,
+        maxOrders: 500,
+        variants: true,
+        bulkPricing: true,
+        reviews: true,
+        seasonalOffers: true,
+        advancedSEO: true,
+        multipleImages: 10,
+        customDomain: false,
+        prioritySupport: false,
+      },
+      PRO: {
+        maxProducts: -1,
+        maxOrders: -1,
+        variants: true,
+        bulkPricing: true,
+        reviews: true,
+        seasonalOffers: true,
+        advancedSEO: true,
+        multipleImages: 20,
+        customDomain: true,
+        prioritySupport: true,
+      },
+    };
+
+    // Override with database settings if exist
+    settings.forEach(setting => {
+      const plan = setting.key.replace('plan_features_', '');
+      if (features[plan]) {
+        features[plan] = { ...features[plan], ...(setting.value as any) };
+      }
+    });
+
+    return features;
+  }
+
+  // Update plan features
+  async updatePlanFeatures(plan: string, featuresData: any) {
+    const key = `plan_features_${plan}`;
+
+    const existing = await this.prisma.setting.findUnique({ where: { key } });
+
+    if (existing) {
+      return this.prisma.setting.update({
+        where: { key },
+        data: { value: featuresData },
+      });
+    }
+
+    return this.prisma.setting.create({
+      data: {
+        key,
+        value: featuresData,
+        description: `Features configuration for ${plan} plan`,
+      },
+    });
+  }
+
+  // ==================== CUSTOM DOMAIN MANAGEMENT ====================
+
+  // Verify domain DNS records
+  async verifyDomain(tenantId: string, domain: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    // In production, you would actually check DNS records here
+    // For now, return dummy data
+    return {
+      domain,
+      verified: false,
+      dnsRecords: [
+        {
+          type: 'A',
+          name: '@',
+          value: 'YOUR_SERVER_IP', // Replace with actual server IP
+          status: 'pending',
+        },
+        {
+          type: 'CNAME',
+          name: 'www',
+          value: 'ra7ba41.vercel.app',
+          status: 'pending',
+        },
+      ],
+    };
+  }
+
+  // Approve custom domain
+  async approveDomain(tenantId: string, domain: string) {
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { customDomain: domain },
+    });
+  }
+
+  // Reject custom domain
+  async rejectDomain(tenantId: string, reason: string) {
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { customDomain: null },
+    });
+  }
+
+  // Get all custom domain requests
+  async getCustomDomainRequests() {
+    return this.prisma.tenant.findMany({
+      where: {
+        customDomain: {
+          not: null,
+        },
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        subscription: {
+          select: {
+            plan: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
 }

@@ -90,4 +90,131 @@ export class AdminController {
   async applyFeatureSchemaFix() {
     return this.adminService.applyFeatureSchemaFix();
   }
+
+  // ==================== NEW ADMIN ENDPOINTS ====================
+
+  @Get('products')
+  @ApiOperation({ summary: 'Get all products across all tenants' })
+  async getAllProducts(
+    @Query('search') search?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.adminService.getAllProducts({
+      search,
+      tenantId,
+      status,
+      page,
+      limit,
+    });
+  }
+
+  @Get('orders')
+  @ApiOperation({ summary: 'Get all orders across all tenants' })
+  async getAllOrders(
+    @Query('search') search?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.adminService.getAllOrders({
+      search,
+      tenantId,
+      status,
+      page,
+      limit,
+    });
+  }
+
+  @Get('users')
+  @ApiOperation({ summary: 'Get all users (merchants and customers)' })
+  async getAllUsers(
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.adminService.getAllUsers({
+      search,
+      role,
+      status,
+      page,
+      limit,
+    });
+  }
+
+  @Patch('users/:id/toggle-status')
+  @ApiOperation({ summary: 'Toggle user active status' })
+  async toggleUserStatus(@Param('id') userId: string) {
+    return this.adminService.toggleUserStatus(userId);
+  }
+
+  @Post('products/:id/delete')
+  @ApiOperation({ summary: 'Delete product' })
+  async deleteProduct(@Param('id') productId: string) {
+    return this.adminService.deleteProduct(productId);
+  }
+
+  @Get('reports')
+  @ApiOperation({ summary: 'Get platform reports and statistics' })
+  async getReports(
+    @Query('period') period?: string,
+    @Query('reportType') reportType?: string,
+  ) {
+    return this.adminService.getReports({ period, reportType });
+  }
+
+  @Get('settings/plan-features')
+  @ApiOperation({ summary: 'Get plan features settings' })
+  async getPlanFeatures() {
+    return this.adminService.getPlanFeatures();
+  }
+
+  @Patch('settings/plan-features')
+  @ApiOperation({ summary: 'Update plan features' })
+  async updatePlanFeatures(
+    @Body('plan') plan: string,
+    @Body('features') features: any,
+  ) {
+    return this.adminService.updatePlanFeatures(plan, features);
+  }
+
+  // ==================== CUSTOM DOMAIN MANAGEMENT ====================
+
+  @Get('domains/requests')
+  @ApiOperation({ summary: 'Get all custom domain requests' })
+  async getCustomDomainRequests() {
+    return this.adminService.getCustomDomainRequests();
+  }
+
+  @Post('domains/verify')
+  @ApiOperation({ summary: 'Verify domain DNS records' })
+  async verifyDomain(
+    @Body('tenantId') tenantId: string,
+    @Body('domain') domain: string,
+  ) {
+    return this.adminService.verifyDomain(tenantId, domain);
+  }
+
+  @Post('domains/approve')
+  @ApiOperation({ summary: 'Approve custom domain' })
+  async approveDomain(
+    @Body('tenantId') tenantId: string,
+    @Body('domain') domain: string,
+  ) {
+    return this.adminService.approveDomain(tenantId, domain);
+  }
+
+  @Post('domains/reject')
+  @ApiOperation({ summary: 'Reject custom domain' })
+  async rejectDomain(
+    @Body('tenantId') tenantId: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.adminService.rejectDomain(tenantId, reason);
+  }
 }

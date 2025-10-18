@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Search, Mail, Phone, Shield, Store, UserCheck, UserX, Eye, Ban, CheckCircle } from 'lucide-react';
+import { adminApi } from '@/lib/api';
 
 export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
@@ -17,59 +18,15 @@ export default function AdminUsers() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // بيانات تجريبية
-      setUsers([
-        {
-          id: '1',
-          name: 'محمد أحمد',
-          email: 'mohamed@tech-store.com',
-          phone: '+213555123456',
-          role: 'MERCHANT',
-          isActive: true,
-          tenant: { name: 'متجر التقنية', subdomain: 'tech-store', status: 'ACTIVE' },
-          createdAt: '2024-01-10',
-          ordersCount: 45,
-          productsCount: 23,
-        },
-        {
-          id: '2',
-          name: 'فاطمة علي',
-          email: 'fatima@electronics.com',
-          phone: '+213666789012',
-          role: 'MERCHANT',
-          isActive: true,
-          tenant: { name: 'متجر الإلكترونيات', subdomain: 'electronics', status: 'ACTIVE' },
-          createdAt: '2024-01-12',
-          ordersCount: 32,
-          productsCount: 18,
-        },
-        {
-          id: '3',
-          name: 'خالد بن سعيد',
-          email: 'khaled@fashion.com',
-          phone: '+213777345678',
-          role: 'MERCHANT',
-          isActive: false,
-          tenant: { name: 'متجر الأزياء', subdomain: 'fashion', status: 'SUSPENDED' },
-          createdAt: '2024-01-15',
-          ordersCount: 8,
-          productsCount: 12,
-        },
-        {
-          id: '4',
-          name: 'أحمد محمد',
-          email: 'ahmed.customer@gmail.com',
-          phone: '+213555987654',
-          role: 'CUSTOMER',
-          isActive: true,
-          tenant: null,
-          createdAt: '2024-01-16',
-          ordersCount: 5,
-          productsCount: 0,
-        },
-      ]);
+      const { data } = await adminApi.getAllUsers({ search: searchTerm, role: filterRole, status: filterStatus });
+      
+      setUsers(data.data.map((u: any) => ({
+        ...u,
+        createdAt: new Date(u.createdAt).toLocaleDateString('ar-DZ'),
+      })));
     } catch (error) {
       console.error('Error loading data:', error);
+      alert('حدث خطأ في تحميل البيانات');
     } finally {
       setLoading(false);
     }
@@ -92,7 +49,13 @@ export default function AdminUsers() {
 
   const toggleUserStatus = async (userId: string) => {
     if (confirm('هل تريد تغيير حالة هذا المستخدم؟')) {
-      setUsers(users.map(u => u.id === userId ? {...u, isActive: !u.isActive} : u));
+      try {
+        await adminApi.toggleUserStatus(userId);
+        alert('تم تغيير حالة المستخدم بنجاح!');
+        loadData();
+      } catch (error) {
+        alert('حدث خطأ');
+      }
     }
   };
 

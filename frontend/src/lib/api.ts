@@ -137,6 +137,48 @@ export const adminApi = {
   
   getStats: () =>
     api.get('/admin/stats'),
+
+  // Products
+  getAllProducts: (params?: any) =>
+    api.get('/admin/products', { params }),
+
+  deleteProduct: (productId: string) =>
+    api.post(`/admin/products/${productId}/delete`),
+
+  // Orders
+  getAllOrders: (params?: any) =>
+    api.get('/admin/orders', { params }),
+
+  // Users
+  getAllUsers: (params?: any) =>
+    api.get('/admin/users', { params }),
+
+  toggleUserStatus: (userId: string) =>
+    api.patch(`/admin/users/${userId}/toggle-status`),
+
+  // Reports
+  getReports: (params?: any) =>
+    api.get('/admin/reports', { params }),
+
+  // Settings
+  getPlanFeatures: () =>
+    api.get('/admin/settings/plan-features'),
+
+  updatePlanFeatures: (plan: string, features: any) =>
+    api.patch('/admin/settings/plan-features', { plan, features }),
+
+  // Custom Domains
+  getCustomDomainRequests: () =>
+    api.get('/admin/domains/requests'),
+
+  verifyDomain: (tenantId: string, domain: string) =>
+    api.post('/admin/domains/verify', { tenantId, domain }),
+
+  approveDomain: (tenantId: string, domain: string) =>
+    api.post('/admin/domains/approve', { tenantId, domain }),
+
+  rejectDomain: (tenantId: string, reason: string) =>
+    api.post('/admin/domains/reject', { tenantId, reason }),
 };
 
 // Merchant API
