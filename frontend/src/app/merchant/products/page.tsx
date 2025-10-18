@@ -235,23 +235,38 @@ export default function MerchantProducts() {
       
       const productData = {
         name: formData.name,
+        nameAr: formData.name, // استخدام نفس الاسم مؤقتاً
         description: formData.description,
+        descriptionAr: formData.description, // استخدام نفس الوصف مؤقتاً
         price: parseFloat(formData.price),
         comparePrice: formData.comparePrice ? parseFloat(formData.comparePrice) : undefined,
         stock: parseInt(formData.stock) || 0,
         sku: formData.sku || undefined,
-        category: formData.category || undefined,
+        categoryId: formData.category || '', // تغيير من category إلى categoryId
         images: imageUrls,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        variants: formData.variants.length > 0 ? formData.variants : undefined,
-        isOffer: formData.isOffer,
-        offerPrice: formData.isOffer && formData.offerPrice ? parseFloat(formData.offerPrice) : undefined,
-        offerEndDate: formData.isOffer && formData.offerEndDate ? formData.offerEndDate : undefined,
-        isLandingPage: formData.isLandingPage,
-        whatsappNumber: formData.isLandingPage && formData.showWhatsappButton ? formData.whatsappNumber : undefined,
-        showWhatsappButton: formData.isLandingPage ? formData.showWhatsappButton : false,
         isActive: formData.isActive,
         isFeatured: formData.isFeatured,
+        // SEO
+        slug: formData.slug || undefined,
+        metaTitle: formData.seoTitle || undefined,
+        metaDescription: formData.seoDescription || undefined,
+        // Shipping
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        weightUnit: formData.weightUnit || undefined,
+        length: formData.length ? parseFloat(formData.length) : undefined,
+        width: formData.width ? parseFloat(formData.width) : undefined,
+        height: formData.height ? parseFloat(formData.height) : undefined,
+        dimensionUnit: formData.dimensionUnit || undefined,
+        shippingFee: formData.shippingFee ? parseFloat(formData.shippingFee) : undefined,
+        freeShipping: formData.freeShipping || false,
+        // Stock alerts
+        lowStockAlert: formData.lowStockAlert ? parseInt(formData.lowStockAlert) : undefined,
+        allowBackorder: formData.allowBackorder || false,
+        // JSON fields
+        bulkPricing: formData.bulkPricing || undefined,
+        badges: formData.badges || undefined,
+        relatedProducts: formData.relatedProducts || undefined,
+        crossSellProducts: formData.crossSellProducts || undefined,
       };
 
       await productsApi.create(productData);

@@ -31,7 +31,7 @@ export class CreateProductDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  compareAtPrice?: number;
+  comparePrice?: number;
 
   @ApiProperty()
   @Type(() => Number)
