@@ -22,8 +22,6 @@ export class StorefrontService {
         address: true,
         theme: true,
         status: true,
-        thankYouMessage: true,
-        thankYouImage: true,
       },
     });
 
@@ -89,7 +87,7 @@ export class StorefrontService {
           description: true,
           descriptionAr: true,
           price: true,
-          compareAtPrice: true,
+          comparePrice: true,
           images: true,
           slug: true,
           stock: true,
@@ -179,7 +177,6 @@ export class StorefrontService {
     return this.prisma.category.findMany({
       where: {
         tenantId: tenant.id,
-        isActive: true,
       },
       select: {
         id: true,
@@ -218,7 +215,7 @@ export class StorefrontService {
         name: true,
         nameAr: true,
         price: true,
-        compareAtPrice: true,
+        comparePrice: true,
         images: true,
         slug: true,
         badges: true,
@@ -279,12 +276,14 @@ export class StorefrontService {
       subtotal += itemSubtotal;
 
       return {
-        productId: product.id,
-        productName: product.nameAr,
-        productNameEn: product.name,
+        productName: product.name,
+        productNameAr: product.nameAr,
         quantity: item.quantity,
         price: price,
         subtotal: itemSubtotal,
+        product: {
+          connect: { id: product.id },
+        },
       };
     });
 

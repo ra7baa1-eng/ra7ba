@@ -20,7 +20,7 @@ import {
   Filter,
   Search,
 } from 'lucide-react';
-import { productsApi } from '@/lib/api';
+import { storefrontApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import {
   Badge,
@@ -103,9 +103,9 @@ export default function StorePage() {
   const loadProducts = async () => {
     try {
       const subdomain = params.subdomain as string;
-      const { data } = await productsApi.getStoreProducts({ subdomain });
-      setProducts(data.products || []);
-      setStoreInfo(data.store || { name: subdomain, subdomain });
+      const { data } = await storefrontApi.getProducts(subdomain);
+      setProducts(data.data || []);
+      setStoreInfo({ name: subdomain, subdomain });
     } catch (error) {
       console.error('Error loading products:', error);
       setProducts([]);
