@@ -5,6 +5,8 @@
 -- Step 1: Add missing Product columns (CRITICAL!)
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "comparePrice" DECIMAL(10,2);
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "stock" INTEGER DEFAULT 0;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "cost" DECIMAL(10,2);
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "trackInventory" BOOLEAN DEFAULT false;
 
 -- Step 2: Add SEO field
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoKeywords" TEXT;
@@ -33,17 +35,17 @@ ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "crossSellProducts" JSONB DEFAULT
 ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "checkoutConfig" JSONB;
 
 -- Step 7: Fix existing NULL JSON values (with proper JSONB casting)
-UPDATE "Product" SET "images" = '[]'::jsonb WHERE "images" IS NULL OR "images"::text = 'null';
-UPDATE "Product" SET "bulkPricing" = '[]'::jsonb WHERE "bulkPricing" IS NULL OR "bulkPricing"::text = 'null';
-UPDATE "Product" SET "badges" = '[]'::jsonb WHERE "badges" IS NULL OR "badges"::text = 'null';
-UPDATE "Product" SET "relatedProducts" = '[]'::jsonb WHERE "relatedProducts" IS NULL OR "relatedProducts"::text = 'null';
-UPDATE "Product" SET "crossSellProducts" = '[]'::jsonb WHERE "crossSellProducts" IS NULL OR "crossSellProducts"::text = 'null';
+-- NOTE: Skip "images" - it's already text[] type, not jsonb
+UPDATE "Product" SET "bulkPricing" = '[]'::jsonb WHERE "bulkPricing" IS NULL;
+UPDATE "Product" SET "badges" = '[]'::jsonb WHERE "badges" IS NULL;
+UPDATE "Product" SET "relatedProducts" = '[]'::jsonb WHERE "relatedProducts" IS NULL;
+UPDATE "Product" SET "crossSellProducts" = '[]'::jsonb WHERE "crossSellProducts" IS NULL;
 
 -- Step 8: Verify columns were added
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns 
 WHERE table_name = 'Product' 
-AND column_name IN ('comparePrice', 'stock', 'seoKeywords', 'weight', 'shippingFee')
+AND column_name IN ('comparePrice', 'stock', 'cost', 'trackInventory', 'seoKeywords', 'weight', 'shippingFee')
 ORDER BY column_name;
 
 -- Success message

@@ -87,6 +87,8 @@ END $$;
 -- Essential columns
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "stock" INTEGER DEFAULT 0;
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "comparePrice" DECIMAL(10,2);
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "cost" DECIMAL(10,2);
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "trackInventory" BOOLEAN DEFAULT false;
 
 -- SEO fields
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoKeywords" TEXT;
@@ -166,7 +168,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Setting_key_key" ON "Setting"("key");
 -- PART 7: ENSURE JSON FIELDS HAVE DEFAULTS
 -- ==============================================
 
-UPDATE "Product" SET "images" = '[]'::jsonb WHERE "images" IS NULL OR "images"::text = 'null';
 UPDATE "Product" SET "bulkPricing" = '[]'::jsonb WHERE "bulkPricing" IS NULL OR "bulkPricing"::text = 'null';
 UPDATE "Product" SET "badges" = '[]'::jsonb WHERE "badges" IS NULL OR "badges"::text = 'null';
 UPDATE "Product" SET "relatedProducts" = '[]'::jsonb WHERE "relatedProducts" IS NULL OR "relatedProducts"::text = 'null';

@@ -102,12 +102,42 @@ export class MerchantService {
       theme?: any;
       telegramChatId?: string;
       checkoutConfig?: any;
+      storeFeatures?: any;
+      privacyPolicy?: string;
+      termsOfService?: string;
+      returnPolicy?: string;
+      thankYouMessage?: string;
+      thankYouImage?: string;
     },
   ) {
-    return this.prisma.tenant.update({
+    console.log('🔄 Updating store settings for tenant:', tenantId);
+    console.log('📦 Data received:', JSON.stringify(data, null, 2));
+
+    const updated = await this.prisma.tenant.update({
       where: { id: tenantId },
-      data,
+      data: {
+        name: data.name,
+        nameAr: data.nameAr,
+        description: data.description,
+        descriptionAr: data.descriptionAr,
+        logo: data.logo,
+        banner: data.banner,
+        phone: data.phone,
+        address: data.address,
+        theme: data.theme,
+        telegramChatId: data.telegramChatId,
+        checkoutConfig: data.checkoutConfig,
+        storeFeatures: data.storeFeatures,
+        privacyPolicy: data.privacyPolicy,
+        termsOfService: data.termsOfService,
+        returnPolicy: data.returnPolicy,
+        thankYouMessage: data.thankYouMessage,
+        thankYouImage: data.thankYouImage,
+      },
     });
+
+    console.log('✅ Store updated successfully:', updated.id);
+    return updated;
   }
 
   // Check trial limits

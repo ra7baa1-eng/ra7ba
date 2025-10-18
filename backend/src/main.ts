@@ -15,6 +15,10 @@ async function bootstrap() {
   // Security
   app.use(helmet() as any);
 
+  // Body size limits (fix PayloadTooLargeError for large JSON like rich text and images)
+  app.use(express.json({ limit: '20mb' }));
+  app.use(express.urlencoded({ limit: '20mb', extended: true }));
+
   // CORS - Allow all origins for now (temporary fix)
   app.enableCors({
     origin: true, // Allow all origins temporarily
