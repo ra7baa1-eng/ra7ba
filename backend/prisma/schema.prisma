@@ -118,9 +118,7 @@ model Tenant {
   telegramChatId String?
   theme          Json? // Store theme customization
   checkoutConfig Json? // Checkout required/optional fields configuration
-  thankYouMessage String? // رسالة صفحة الشكر
-  thankYouImage   String? // صورة صفحة الشكر
-  status         TenantStatus @default(TRIAL)
+  status         TenantStatus @default(ACTIVE)
 
   // Trial limits
   trialEndsAt  DateTime?
