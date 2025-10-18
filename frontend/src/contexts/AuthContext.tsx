@@ -54,11 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(parsedUser);
       setLoading(false);
       
-      // التحقق من التوكن في الخلفية (بدون انتظار)
-      authApi.validateToken().catch(() => {
-        // إذا فشل التوكن، سيتم تسجيل الخروج عند أول طلب API
-        console.log('Token validation failed - will logout on next API call');
-      });
+      // axios interceptor سيتعامل مع token expiration تلقائياً
     } catch (error) {
       console.error('Auth check failed:', error);
       setLoading(false);

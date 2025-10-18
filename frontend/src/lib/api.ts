@@ -68,10 +68,19 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch (refreshError) {
+        // فشل refresh - تسجيل خروج فقط إذا لم يكن هناك token
+        console.error('Token refresh failed:', refreshError);
         try {
-          window.localStorage.clear();
+          window.localStorage.removeItem('accessToken');
+          window.localStorage.removeItem('refreshToken');
+          window.localStorage.removeItem('user');
         } catch (_) {}
-        window.location.href = '/auth/login';
+        
+        // تأخير بسيط قبل إعادة التوجيه لتجنب race conditions
+        setTimeout(() => {
+          window.location.href = '/auth/login';
+        }, 100);
+        
         return Promise.reject(refreshError);
       }
     }
