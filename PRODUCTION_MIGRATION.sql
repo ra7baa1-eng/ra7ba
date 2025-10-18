@@ -106,10 +106,10 @@ ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "lowStockAlert" INTEGER;
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "allowBackorder" BOOLEAN DEFAULT false;
 
 -- JSON fields
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "bulkPricing" JSONB DEFAULT '[]';
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "badges" JSONB DEFAULT '[]';
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "relatedProducts" JSONB DEFAULT '[]';
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "crossSellProducts" JSONB DEFAULT '[]';
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "bulkPricing" JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "badges" JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "relatedProducts" JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "crossSellProducts" JSONB DEFAULT '[]'::jsonb;
 
 -- ==============================================
 -- PART 3: ADD MISSING COLUMNS TO TENANT
@@ -166,11 +166,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Setting_key_key" ON "Setting"("key");
 -- PART 7: ENSURE JSON FIELDS HAVE DEFAULTS
 -- ==============================================
 
-UPDATE "Product" SET "images" = '[]' WHERE "images" IS NULL OR "images"::text = 'null';
-UPDATE "Product" SET "bulkPricing" = '[]' WHERE "bulkPricing" IS NULL OR "bulkPricing"::text = 'null';
-UPDATE "Product" SET "badges" = '[]' WHERE "badges" IS NULL OR "badges"::text = 'null';
-UPDATE "Product" SET "relatedProducts" = '[]' WHERE "relatedProducts" IS NULL OR "relatedProducts"::text = 'null';
-UPDATE "Product" SET "crossSellProducts" = '[]' WHERE "crossSellProducts" IS NULL OR "crossSellProducts"::text = 'null';
+UPDATE "Product" SET "images" = '[]'::jsonb WHERE "images" IS NULL OR "images"::text = 'null';
+UPDATE "Product" SET "bulkPricing" = '[]'::jsonb WHERE "bulkPricing" IS NULL OR "bulkPricing"::text = 'null';
+UPDATE "Product" SET "badges" = '[]'::jsonb WHERE "badges" IS NULL OR "badges"::text = 'null';
+UPDATE "Product" SET "relatedProducts" = '[]'::jsonb WHERE "relatedProducts" IS NULL OR "relatedProducts"::text = 'null';
+UPDATE "Product" SET "crossSellProducts" = '[]'::jsonb WHERE "crossSellProducts" IS NULL OR "crossSellProducts"::text = 'null';
 
 -- ==============================================
 -- PART 8: UPDATE OLD DATA (OPTIONAL)
