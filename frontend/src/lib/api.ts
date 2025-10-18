@@ -297,6 +297,10 @@ export const ordersApi = {
   
   updateStatus: (id: string, status: string, notes?: string) =>
     api.patch(`/merchant/orders/${id}`, { status, notes }),
+
+  // Track order by order number (public)
+  trackOrder: (orderNumber: string) =>
+    api.get(`/orders/track/${orderNumber}`),
 };
 
 // Subscription API

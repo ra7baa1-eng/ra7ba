@@ -92,7 +92,6 @@ export class StorefrontService {
           slug: true,
           stock: true,
           isFeatured: true,
-          badges: true,
           freeShipping: true,
           category: {
             select: {
@@ -218,7 +217,6 @@ export class StorefrontService {
         comparePrice: true,
         images: true,
         slug: true,
-        badges: true,
         freeShipping: true,
       },
       take: 8,
@@ -304,9 +302,9 @@ export class StorefrontService {
         wilaya: orderData.wilaya,
         commune: orderData.commune,
         address: orderData.address,
-        notes: orderData.notes,
+        customerNotes: orderData.notes,
         subtotal,
-        shippingFee,
+        shippingCost: shippingFee,
         total,
         status: 'PENDING',
         items: {
