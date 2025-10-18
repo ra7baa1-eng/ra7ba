@@ -260,8 +260,19 @@ export default function MerchantSettingsComplete() {
   const saveSettings = async (endpoint: string, data: any) => {
     setSaving(true);
     try {
+      // استخدام merchantApi بدلاً من fetch المباشر
+      const { default: axios } = await import('axios');
+      const api = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://rahba-1.onrender.com/api',
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true,
+      });
+
+      // تحويل الـ endpoint إلى المسار الصحيح في backend
+      let actualEndpoint = '/merchant/store/settings';
+      
       // إذا كانت هناك ملفات ضمن الإعدادات العامة نرسل FormData
-      if (endpoint === '/api/settings/general' && (data?.logo instanceof File || data?.banner instanceof File)) {
+      if (endpoint.includes('general') && (data?.logo instanceof File || data?.banner instanceof File)) {
         const form = new FormData();
         Object.entries(data).forEach(([key, value]) => {
           if (value instanceof File) {
@@ -272,13 +283,30 @@ export default function MerchantSettingsComplete() {
             form.append(key, String(value));
           }
         });
-        await fetch(endpoint, { method: 'PUT', body: form });
-      } else {
-        await fetch(endpoint, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+        await api.patch(actualEndpoint, form, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
+      } else {
+        // تحويل البيانات إلى التنسيق المطلوب من backend
+        const payload: any = {};
+        
+        if (endpoint.includes('general')) {
+          payload.name = data.storeName;
+          payload.nameAr = data.storeNameAr || data.storeName;
+          payload.description = data.storeDescription;
+          payload.descriptionAr = data.storeDescription;
+          payload.phone = data.supportPhone;
+          payload.address = data.storeAddress;
+        } else if (endpoint.includes('design')) {
+          payload.theme = data;
+        } else if (endpoint.includes('notifications')) {
+          payload.telegramChatId = data.telegramChatId;
+        } else {
+          // لبقية الإعدادات نرسلها كما هي
+          Object.assign(payload, data);
+        }
+        
+        await api.patch(actualEndpoint, payload);
       }
       // حفظ محلي حسب القسم
       try {

@@ -164,7 +164,7 @@ export default function MerchantOrders() {
 
                   <div>
                     <div className="text-sm text-gray-600">العنوان</div>
-                    <div>{selectedOrder.shippingAddress}</div>
+                    <div>{selectedOrder.address}</div>
                     <div className="text-sm text-gray-600">
                       {selectedOrder.wilaya} - {selectedOrder.commune}
                     </div>
