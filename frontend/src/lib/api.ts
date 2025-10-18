@@ -183,55 +183,120 @@ export const adminApi = {
 
 // Merchant API
 export const merchantApi = {
+  // Dashboard
   getDashboard: () =>
     api.get('/merchant/dashboard'),
   
+  getStats: () =>
+    api.get('/merchant/stats'),
+  
+  checkTrialLimits: () =>
+    api.get('/merchant/trial-limits'),
+
+  // Store Settings
   updateStore: (data: any) =>
     api.patch('/merchant/store/settings', data),
+
+  // Products
+  getProducts: (params?: any) =>
+    api.get('/merchant/products', { params }),
+  
+  getProduct: (id: string) =>
+    api.get(`/merchant/products/${id}`),
+  
+  createProduct: (data: any) =>
+    api.post('/merchant/products', data),
+  
+  updateProduct: (id: string, data: any) =>
+    api.patch(`/merchant/products/${id}`, data),
+  
+  deleteProduct: (id: string) =>
+    api.delete(`/merchant/products/${id}`),
+
+  duplicateProduct: (id: string) =>
+    api.post(`/merchant/products/${id}/duplicate`),
+
+  // Categories
+  getCategories: () =>
+    api.get('/merchant/categories'),
+
+  getCategory: (id: string) =>
+    api.get(`/merchant/categories/${id}`),
+
+  createCategory: (data: any) =>
+    api.post('/merchant/categories', data),
+
+  updateCategory: (id: string, data: any) =>
+    api.patch(`/merchant/categories/${id}`, data),
+
+  deleteCategory: (id: string) =>
+    api.delete(`/merchant/categories/${id}`),
+
+  // Orders
+  getOrders: (params?: any) =>
+    api.get('/merchant/orders', { params }),
+  
+  getOrder: (id: string) =>
+    api.get(`/merchant/orders/${id}`),
+  
+  updateOrder: (id: string, data: any) =>
+    api.patch(`/merchant/orders/${id}`, data),
 };
 
-// Products API
+// Storefront API (Customer-facing)
+export const storefrontApi = {
+  // Store
+  getStore: (subdomain: string) =>
+    api.get(`/store/${subdomain}`),
+
+  // Products
+  getProducts: (subdomain: string, params?: any) =>
+    api.get(`/store/${subdomain}/products`, { params }),
+
+  getProduct: (subdomain: string, slug: string) =>
+    api.get(`/store/${subdomain}/products/${slug}`),
+
+  // Categories
+  getCategories: (subdomain: string) =>
+    api.get(`/store/${subdomain}/categories`),
+
+  // Featured
+  getFeaturedProducts: (subdomain: string) =>
+    api.get(`/store/${subdomain}/featured`),
+
+  // Checkout
+  createOrder: (subdomain: string, data: any) =>
+    api.post(`/store/${subdomain}/orders`, data),
+};
+
+// Legacy Products API (if needed for compatibility)
 export const productsApi = {
   getAll: (params?: any) =>
-    api.get('/products/merchant', { params }),
+    api.get('/merchant/products', { params }),
   
   getOne: (id: string) =>
-    api.get(`/products/merchant/${id}`),
+    api.get(`/merchant/products/${id}`),
   
   create: (data: any) =>
-    api.post('/products', data),
+    api.post('/merchant/products', data),
   
   update: (id: string, data: any) =>
-    api.patch(`/products/${id}`, data),
+    api.patch(`/merchant/products/${id}`, data),
   
   delete: (id: string) =>
-    api.delete(`/products/${id}`),
-  
-  // Store products (public)
-  getStoreProducts: (params?: any) =>
-    api.get('/products/store', { params }),
+    api.delete(`/merchant/products/${id}`),
 };
 
-// Orders API
+// Legacy Orders API (if needed for compatibility)
 export const ordersApi = {
   getAll: (params?: any) =>
-    api.get('/orders/merchant', { params }),
+    api.get('/merchant/orders', { params }),
   
   getOne: (id: string) =>
-    api.get(`/orders/merchant/${id}`),
+    api.get(`/merchant/orders/${id}`),
   
   updateStatus: (id: string, status: string, notes?: string) =>
-    api.patch(`/orders/merchant/${id}/status`, { status, notes }),
-  
-  assignDelivery: (id: string, data: any) =>
-    api.patch(`/orders/merchant/${id}/delivery`, data),
-  
-  // Public
-  checkout: (data: any) =>
-    api.post('/orders/checkout', data),
-  
-  trackOrder: (orderNumber: string) =>
-    api.get(`/orders/track/${orderNumber}`),
+    api.patch(`/merchant/orders/${id}`, { status, notes }),
 };
 
 // Subscription API
