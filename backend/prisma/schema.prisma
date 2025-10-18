@@ -118,6 +118,17 @@ model Tenant {
   telegramChatId String?
   theme          Json? // Store theme customization
   checkoutConfig Json? // Checkout required/optional fields configuration
+  storeFeatures  Json? // Store features configuration
+  
+  // Policies & Legal
+  privacyPolicy  String? @db.Text
+  termsOfService String? @db.Text
+  returnPolicy   String? @db.Text
+  
+  // Thank You Page
+  thankYouMessage String?
+  thankYouImage   String?
+  
   status         TenantStatus @default(ACTIVE)
 
   // Trial limits
