@@ -103,8 +103,13 @@ export default function StorePage() {
   const loadProducts = async () => {
     try {
       const subdomain = params.subdomain as string;
-      const { data } = await storefrontApi.getProducts(subdomain);
-      setProducts(data.data || []);
+      const response = await storefrontApi.getProducts(subdomain);
+      const list = response.data?.data || [];
+      const mapped = list.map((p: any) => ({
+        ...p,
+        category: p.category?.nameAr || p.category?.name || p.category || '',
+      }));
+      setProducts(mapped);
       setStoreInfo({ name: subdomain, subdomain });
     } catch (error) {
       console.error('Error loading products:', error);

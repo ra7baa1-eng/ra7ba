@@ -135,7 +135,7 @@ export default function MerchantSettingsComplete() {
         const logoUrl = await uploadImageToImgBB(file, 'store/logos');
         
         // Update store settings with the new URL
-        await saveSettings({ ...generalSettings, logo: logoUrl });
+        await saveSettings('/api/settings/general', { ...generalSettings, logo: logoUrl });
         
         // Update preview
         setLogoPreviewUrl(logoUrl);
@@ -240,7 +240,7 @@ export default function MerchantSettingsComplete() {
         const bannerUrl = await uploadImageToImgBB(file, 'store/banners');
         
         // Update store settings with the new URL
-        await saveSettings({ ...generalSettings, banner: bannerUrl });
+        await saveSettings('/api/settings/general', { ...generalSettings, banner: bannerUrl });
         
         // Update preview
         setBannerPreviewUrl(bannerUrl);

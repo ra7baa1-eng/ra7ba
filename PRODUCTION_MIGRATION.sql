@@ -89,6 +89,8 @@ ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "stock" INTEGER DEFAULT 0;
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "comparePrice" DECIMAL(10,2);
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "cost" DECIMAL(10,2);
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "trackInventory" BOOLEAN DEFAULT false;
+-- Featured flag
+ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "isFeatured" BOOLEAN DEFAULT false;
 
 -- SEO fields
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "seoKeywords" TEXT;
@@ -118,6 +120,12 @@ ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "crossSellProducts" JSONB DEFAULT
 -- ==============================================
 
 ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "checkoutConfig" JSONB;
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "storeFeatures" JSONB;
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "privacyPolicy" TEXT;
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "termsOfService" TEXT;
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "returnPolicy" TEXT;
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "thankYouMessage" VARCHAR(255);
+ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "thankYouImage" VARCHAR(500);
 
 -- ==============================================
 -- PART 4: CREATE NOTIFICATION TABLE

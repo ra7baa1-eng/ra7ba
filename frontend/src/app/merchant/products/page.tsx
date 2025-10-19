@@ -121,8 +121,8 @@ export default function MerchantProducts() {
 
   const loadProducts = async () => {
     try {
-      const { data } = await productsApi.getAll();
-      setProducts(data);
+      const response = await productsApi.getAll();
+      setProducts(response.data?.data || []);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {

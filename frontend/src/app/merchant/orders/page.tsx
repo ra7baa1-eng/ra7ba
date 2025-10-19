@@ -17,12 +17,36 @@ export default function MerchantOrders() {
 
   const loadOrders = async () => {
     try {
-      const { data } = await ordersApi.getAll();
-      setOrders(data);
+      const response = await ordersApi.getAll();
+      const list = response.data?.data || [];
+      // Normalize fields to match UI expectations
+      const normalized = list.map((o: any) => ({
+        ...o,
+        totalAmount: Number(o.total ?? 0),
+        deliveryFee: Number(o.shippingCost ?? 0),
+        itemsCount: Array.isArray(o.items) ? o.items.length : (o._count?.items || 0),
+      }));
+      setOrders(normalized);
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const selectOrder = async (orderId: string) => {
+    try {
+      const resp = await ordersApi.getOne(orderId);
+      const o = resp.data;
+      setSelectedOrder({
+        ...o,
+        totalAmount: Number(o.total ?? 0),
+        deliveryFee: Number(o.shippingCost ?? 0),
+      });
+    } catch (e) {
+      // fallback: pick from list if API fails
+      const fallback = orders.find((x) => x.id === orderId);
+      if (fallback) setSelectedOrder(fallback);
     }
   };
 
@@ -117,7 +141,7 @@ export default function MerchantOrders() {
               {filteredOrders.map((order) => (
                 <div
                   key={order.id}
-                  onClick={() => setSelectedOrder(order)}
+                  onClick={() => selectOrder(order.id)}
                   className={`bg-white rounded-xl shadow-sm p-4 cursor-pointer transition hover:shadow-md ${
                     selectedOrder?.id === order.id ? 'ring-2 ring-purple-500' : ''
                   }`}
