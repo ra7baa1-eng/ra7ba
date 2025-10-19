@@ -97,7 +97,7 @@ export default function MerchantSettings() {
   const loadStoreSettings = async () => {
     try {
       setLoading(true);
-      const response = await merchantApi.get('/merchant/dashboard');
+      const response = await merchantApi.getDashboard();
       if (response.data?.tenant) {
         setStoreData(response.data.tenant);
         setTenantId(response.data.tenant.id); // Set tenant ID for real-time sync
@@ -131,7 +131,7 @@ export default function MerchantSettings() {
         updates.thankYouImage = imageUrl;
       }
 
-      const response = await merchantApi.patch('/merchant/store/settings', updates);
+      const response = await merchantApi.updateStore(updates);
       
       setStoreData((prev: any) => ({ ...prev, ...response.data }));
       toast.success('✅ تم حفظ التغييرات بنجاح!');

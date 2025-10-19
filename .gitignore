@@ -103,6 +103,3 @@ jspm_packages/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# Prisma
-prisma/migrations/
