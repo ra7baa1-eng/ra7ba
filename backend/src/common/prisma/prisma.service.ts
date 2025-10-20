@@ -30,31 +30,36 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     const maxQueryRetries = parseInt(process.env.DB_QUERY_RETRIES || '10', 10);
     const queryRetryDelayMs = parseInt(process.env.DB_QUERY_RETRY_DELAY_MS || '2000', 10);
-    this.$use(async (params, next) => {
-      let lastErr: any;
-      for (let attempt = 1; attempt <= maxQueryRetries; attempt++) {
-        try {
-          return await next(params);
-        } catch (err: any) {
-          lastErr = err;
-          const msg = err?.message || String(err);
-          const code = err?.code || err?.errorCode || err?.name;
-          const isTransient =
-            code === 'P1001' ||
-            code === 'PrismaClientInitializationError' ||
-            msg.includes("Can't reach database server") ||
-            msg.includes('ECONN') ||
-            msg.includes('ENETUNREACH') ||
-            msg.includes('ETIMEDOUT');
-          if (isTransient && attempt < maxQueryRetries) {
-            await new Promise((res) => setTimeout(res, queryRetryDelayMs));
-            continue;
+    try {
+      const anyClient: any = this as any;
+      if (typeof anyClient.$use === 'function') {
+        anyClient.$use(async (params: any, next: any) => {
+          let lastErr: any;
+          for (let attempt = 1; attempt <= maxQueryRetries; attempt++) {
+            try {
+              return await next(params);
+            } catch (err: any) {
+              lastErr = err;
+              const msg = err?.message || String(err);
+              const code = err?.code || err?.errorCode || err?.name;
+              const isTransient =
+                code === 'P1001' ||
+                code === 'PrismaClientInitializationError' ||
+                msg.includes("Can't reach database server") ||
+                msg.includes('ECONN') ||
+                msg.includes('ENETUNREACH') ||
+                msg.includes('ETIMEDOUT');
+              if (isTransient && attempt < maxQueryRetries) {
+                await new Promise((res) => setTimeout(res, queryRetryDelayMs));
+                continue;
+              }
+              throw err;
+            }
           }
-          throw err;
-        }
+          throw lastErr;
+        });
       }
-      throw lastErr;
-    });
+    } catch {}
   }
 
   async onModuleInit() {
