@@ -7,6 +7,7 @@ export class StorefrontService {
 
   // Get store by subdomain
   async getStoreBySubdomain(subdomain: string) {
+    const startTime = Date.now();
     const tenant = await this.prisma.tenant.findUnique({
       where: { subdomain },
       select: {
@@ -37,6 +38,7 @@ export class StorefrontService {
       throw new BadRequestException('Store is not active');
     }
 
+    console.log(`[getStoreBySubdomain] Completed in ${Date.now() - startTime}ms`);
     return tenant;
   }
 
@@ -48,6 +50,7 @@ export class StorefrontService {
     limit?: number;
     sortBy?: string;
   }) {
+    const startTime = Date.now();
     const tenant = await this.getStoreBySubdomain(subdomain);
     const { search, categoryId, page = 1, limit = 20, sortBy = 'createdAt' } = filters || {};
     const skip = (page - 1) * limit;
@@ -115,6 +118,7 @@ export class StorefrontService {
       this.prisma.product.count({ where }),
     ]);
 
+    console.log(`[getStoreProducts] Completed in ${Date.now() - startTime}ms`);
     return {
       data: products,
       meta: {
@@ -128,6 +132,7 @@ export class StorefrontService {
 
   // Get single product
   async getProduct(subdomain: string, productSlug: string) {
+    const startTime = Date.now();
     const tenant = await this.getStoreBySubdomain(subdomain);
 
     const product = await this.prisma.product.findFirst({
@@ -170,6 +175,7 @@ export class StorefrontService {
       take: 4,
     });
 
+    console.log(`[getProduct] Completed in ${Date.now() - startTime}ms`);
     return {
       ...product,
       relatedProducts,
@@ -245,100 +251,117 @@ export class StorefrontService {
     }>;
     notes?: string;
   }) {
-    const tenant = await this.getStoreBySubdomain(subdomain);
+    const startTime = Date.now();
+    console.log(`[createOrder] Start for subdomain: ${subdomain}`);
+    
+    try {
+      const tenant = await this.getStoreBySubdomain(subdomain);
+      console.log(`[createOrder] Tenant found in ${Date.now() - startTime}ms`);
 
-    // Calculate order total
-    const productIds = orderData.items.map(item => item.productId);
-    const products = await this.prisma.product.findMany({
-      where: {
-        id: { in: productIds },
-        tenantId: tenant.id,
-        isActive: true,
-      },
-    });
-
-    if (products.length !== productIds.length) {
-      throw new BadRequestException('Some products not found or inactive');
-    }
-
-    // Check stock
-    for (const item of orderData.items) {
-      const product = products.find(p => p.id === item.productId);
-      if (!product) {
-        throw new BadRequestException(`Product ${item.productId} not found`);
-      }
-      if (product.stock < item.quantity) {
-        throw new BadRequestException(`Insufficient stock for ${product.nameAr}`);
-      }
-    }
-
-    // Calculate totals
-    let subtotal = 0;
-    const orderItems = orderData.items.map(item => {
-      const product = products.find(p => p.id === item.productId)!;
-      const price = Number(product.price);
-      const itemSubtotal = price * item.quantity;
-      subtotal += itemSubtotal;
-
-      return {
-        productName: product.name,
-        productNameAr: product.nameAr,
-        quantity: item.quantity,
-        price: price,
-        subtotal: itemSubtotal,
-        product: {
-          connect: { id: product.id },
-        },
-      };
-    });
-
-    const shippingFee = 600; // Default shipping fee
-    const total = subtotal + shippingFee;
-
-    // Generate order number
-    const orderNumber = `ORD-${Date.now()}`;
-
-    // Create order
-    const order = await this.prisma.order.create({
-      data: {
-        orderNumber,
-        tenantId: tenant.id,
-        customerName: orderData.customerName,
-        customerPhone: orderData.customerPhone,
-        customerEmail: orderData.customerEmail,
-        wilaya: orderData.wilaya,
-        commune: orderData.commune,
-        address: orderData.address,
-        customerNotes: orderData.notes,
-        subtotal,
-        shippingCost: shippingFee,
-        total,
-        status: 'PENDING',
-        items: {
-          create: orderItems,
-        },
-      },
-      include: {
-        items: true,
-      },
-    });
-
-    // Decrement stock
-    for (const item of orderData.items) {
-      await this.prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: { decrement: item.quantity },
+      // Calculate order total
+      const productIds = orderData.items.map(item => item.productId);
+      const products = await this.prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          tenantId: tenant.id,
+          isActive: true,
         },
       });
+      console.log(`[createOrder] Products fetched in ${Date.now() - startTime}ms`);
+
+      if (products.length !== productIds.length) {
+        throw new BadRequestException('Some products not found or inactive');
+      }
+
+      // Check stock
+      for (const item of orderData.items) {
+        const product = products.find(p => p.id === item.productId);
+        if (!product) {
+          throw new BadRequestException(`Product ${item.productId} not found`);
+        }
+        if (product.stock < item.quantity) {
+          throw new BadRequestException(`Insufficient stock for ${product.nameAr}`);
+        }
+      }
+
+      // Calculate totals
+      let subtotal = 0;
+      const orderItems = orderData.items.map(item => {
+        const product = products.find(p => p.id === item.productId)!;
+        const price = Number(product.price);
+        const itemSubtotal = price * item.quantity;
+        subtotal += itemSubtotal;
+
+        return {
+          productName: product.name,
+          productNameAr: product.nameAr,
+          quantity: item.quantity,
+          price: price,
+          subtotal: itemSubtotal,
+          product: {
+            connect: { id: product.id },
+          },
+        };
+      });
+
+      const shippingFee = 600; // Default shipping fee
+      const total = subtotal + shippingFee;
+
+      // Generate order number
+      const orderNumber = `ORD-${Date.now()}`;
+
+      // Use transaction for atomicity and parallel updates for speed
+      const order = await this.prisma.$transaction(async (tx) => {
+        // Create order
+        const newOrder = await tx.order.create({
+          data: {
+            orderNumber,
+            tenantId: tenant.id,
+            customerName: orderData.customerName,
+            customerPhone: orderData.customerPhone,
+            customerEmail: orderData.customerEmail,
+            wilaya: orderData.wilaya,
+            commune: orderData.commune,
+            address: orderData.address,
+            customerNotes: orderData.notes,
+            subtotal,
+            shippingCost: shippingFee,
+            total,
+            status: 'PENDING',
+            items: {
+              create: orderItems,
+            },
+          },
+          include: {
+            items: true,
+          },
+        });
+
+        // Parallel stock updates and order count increment
+        await Promise.all([
+          ...orderData.items.map(item =>
+            tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { decrement: item.quantity } },
+            })
+          ),
+          tx.tenant.update({
+            where: { id: tenant.id },
+            data: { orderCount: { increment: 1 } },
+          }),
+        ]);
+
+        return newOrder;
+      }, {
+        maxWait: 5000, // 5s max wait for transaction lock
+        timeout: 8000, // 8s max transaction time
+      });
+
+      console.log(`[createOrder] Completed in ${Date.now() - startTime}ms`);
+      return order;
+    } catch (error) {
+      console.error(`[createOrder] Error after ${Date.now() - startTime}ms:`, error);
+      throw error;
     }
-
-    // Increment order count
-    await this.prisma.tenant.update({
-      where: { id: tenant.id },
-      data: { orderCount: { increment: 1 } },
-    });
-
-    return order;
   }
 }

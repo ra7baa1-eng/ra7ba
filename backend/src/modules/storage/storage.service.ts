@@ -32,10 +32,20 @@ export class StorageService {
     file: any,
     folder: string = 'general',
   ): Promise<string> {
-    if (this.useLocal) {
-      return this.uploadLocal(file, folder);
+    const startTime = Date.now();
+    console.log(`[uploadFile] Start upload to ${this.useLocal ? 'local' : 'Supabase'}, size: ${file.size} bytes`);
+    
+    try {
+      const url = this.useLocal 
+        ? await this.uploadLocal(file, folder)
+        : await this.uploadToSupabase(file, folder);
+      
+      console.log(`[uploadFile] Completed in ${Date.now() - startTime}ms`);
+      return url;
+    } catch (error) {
+      console.error(`[uploadFile] Failed after ${Date.now() - startTime}ms:`, error);
+      throw error;
     }
-    return this.uploadToSupabase(file, folder);
   }
 
   private async uploadToSupabase(
@@ -50,6 +60,7 @@ export class StorageService {
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
 
     const fileContent = file.buffer ?? fs.readFileSync(file.path);
+    console.log(`[uploadToSupabase] Uploading ${fileName}, size: ${fileContent.length} bytes`);
 
     let { data, error } = await this.supabase.storage
       .from(bucket)
