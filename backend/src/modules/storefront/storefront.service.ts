@@ -51,7 +51,10 @@ export class StorefrontService {
     const where: any = {
       tenantId: tenant.id,
       isActive: true,
-      stock: { gt: 0 },
+      OR: [
+        { trackInventory: false },
+        { stock: { gt: 0 } },
+      ],
     };
 
     if (search) {

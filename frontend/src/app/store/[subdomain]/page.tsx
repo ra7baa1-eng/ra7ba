@@ -77,20 +77,13 @@ export default function StorePage() {
 
   useEffect(() => {
     loadProducts();
+    loadStore();
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
-    // استرجاع بيانات المتجر من التخزين المحلي
+    // ابقِ ميزات الواجهة من localStorage كاحتياط فقط
     try {
-      const g = localStorage.getItem('ra7ba:settings:general');
-      if (g) {
-        const gj = JSON.parse(g);
-        if (gj.storeDescription) setStoreDescription(gj.storeDescription);
-        if (gj.storeAddress) setStoreAddress(gj.storeAddress);
-        if (gj.supportEmail) setSupportEmail(gj.supportEmail);
-        if (gj.supportPhone) setSupportPhone(gj.supportPhone);
-      }
       const features = localStorage.getItem('ra7ba:settings:features');
       if (features) {
         const fj = JSON.parse(features);
@@ -110,13 +103,27 @@ export default function StorePage() {
         category: p.category?.nameAr || p.category?.name || p.category || '',
       }));
       setProducts(mapped);
-      setStoreInfo({ name: subdomain, subdomain });
+      setStoreInfo((prev: any) => prev ?? { name: subdomain, subdomain });
     } catch (error) {
       console.error('Error loading products:', error);
       setProducts([]);
       setStoreInfo({ name: params.subdomain as string, subdomain: params.subdomain as string });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStore = async () => {
+    try {
+      const subdomain = params.subdomain as string;
+      const response = await storefrontApi.getStore(subdomain);
+      const store = response.data;
+      setStoreInfo(store);
+      setStoreDescription(store.descriptionAr || store.description || '');
+      setStoreAddress(store.address || '');
+      setSupportPhone(store.phone || '');
+    } catch (error) {
+      console.error('Error loading store info:', error);
     }
   };
 

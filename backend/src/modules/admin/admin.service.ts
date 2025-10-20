@@ -433,6 +433,15 @@ BEGIN
     CREATE INDEX IF NOT EXISTS "BundleOffer_productId_idx" ON "BundleOffer"("productId");
     CREATE INDEX IF NOT EXISTS "BundleOffer_isActive_idx" ON "BundleOffer"("isActive");
 
+    -- 8) Ensure Setting.description exists (older DBs may miss this column)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'Setting' AND column_name = 'description'
+    ) THEN
+        ALTER TABLE "Setting" ADD COLUMN "description" TEXT;
+        RAISE NOTICE 'Added column Setting.description';
+    END IF;
+
 END $$;`;
 
     await this.prisma.$executeRawUnsafe(sql);
@@ -523,8 +532,10 @@ END $$;`;
     page?: number;
     limit?: number;
   }) {
-    const { search, tenantId, status, page = 1, limit = 20 } = filters;
-    const skip = (page - 1) * limit;
+    const { search, tenantId, status, page, limit } = filters;
+    const validPage = Math.max(1, parseInt(String(page ?? 1)) || 1);
+    const validLimit = Math.max(1, Math.min(100, parseInt(String(limit ?? 20)) || 20));
+    const skip = (validPage - 1) * validLimit;
 
     const where: any = {};
 
@@ -563,7 +574,7 @@ END $$;`;
           },
         },
         skip,
-        take: limit,
+        take: validLimit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
@@ -573,9 +584,9 @@ END $$;`;
       data: products,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(total / validLimit),
       },
     };
   }
@@ -588,8 +599,10 @@ END $$;`;
     page?: number;
     limit?: number;
   }) {
-    const { search, tenantId, status, page = 1, limit = 20 } = filters;
-    const skip = (page - 1) * limit;
+    const { search, tenantId, status, page, limit } = filters;
+    const validPage = Math.max(1, parseInt(String(page ?? 1)) || 1);
+    const validLimit = Math.max(1, Math.min(100, parseInt(String(limit ?? 20)) || 20));
+    const skip = (validPage - 1) * validLimit;
 
     const where: any = {};
 
@@ -630,7 +643,7 @@ END $$;`;
           },
         },
         skip,
-        take: limit,
+        take: validLimit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.count({ where }),
@@ -658,8 +671,10 @@ END $$;`;
     page?: number;
     limit?: number;
   }) {
-    const { search, role, status, page = 1, limit = 20 } = filters;
-    const skip = (page - 1) * limit;
+    const { search, role, status, page, limit } = filters;
+    const validPage = Math.max(1, parseInt(String(page ?? 1)) || 1);
+    const validLimit = Math.max(1, Math.min(100, parseInt(String(limit ?? 20)) || 20));
+    const skip = (validPage - 1) * validLimit;
 
     const where: any = {};
 
@@ -704,7 +719,7 @@ END $$;`;
           },
         },
         skip,
-        take: limit,
+        take: validLimit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count({ where }),
@@ -892,6 +907,7 @@ END $$;`;
           in: ['plan_features_FREE', 'plan_features_STANDARD', 'plan_features_PRO'],
         },
       },
+      select: { key: true, value: true },
     });
 
     const features: any = {
@@ -961,7 +977,6 @@ END $$;`;
       data: {
         key,
         value: featuresData,
-        description: `Features configuration for ${plan} plan`,
       },
     });
   }
