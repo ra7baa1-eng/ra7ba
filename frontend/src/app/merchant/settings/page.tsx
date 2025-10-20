@@ -10,6 +10,7 @@ import { uploadImageToImgBB } from '@/lib/upload';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useRealtimeStore } from '@/hooks/useRealtimeStore';
+import { Switch } from '@/components/ui/switch';
 
 const TabButton = ({ active, icon: Icon, label, onClick }: any) => (
   <button
@@ -205,12 +206,7 @@ export default function MerchantSettings() {
                 label="التصميم والألوان"
                 onClick={() => setActiveTab('design')}
               />
-              <TabButton
-                active={activeTab === 'policies'}
-                icon={Shield}
-                label="السياسات والشروط"
-                onClick={() => setActiveTab('policies')}
-              />
+              
               <TabButton
                 active={activeTab === 'notifications'}
                 icon={Bell}
@@ -342,49 +338,69 @@ export default function MerchantSettings() {
               </div>
             )}
 
-            {/* Policies */}
-            {activeTab === 'policies' && (
+            {/* Features */}
+            {activeTab === 'features' && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-blue-500" />
-                  السياسات والشروط
+                  <Sparkles className="w-6 h-6 text-blue-500" />
+                  الميزات
                 </h2>
 
                 <div className="space-y-6">
-                  <InputField
-                    label="سياسة الخصوصية"
-                    value={storeData.privacyPolicy || ''}
-                    onChange={(e: any) => setStoreData({ ...storeData, privacyPolicy: e.target.value })}
-                    placeholder="أدخل سياسة الخصوصية..."
-                    textarea
-                  />
+                  <div className="flex items-center justify-between rounded-xl border p-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">تفعيل سلة التسوق</p>
+                      <p className="text-sm text-gray-500">عند الإيقاف يتم التبديل إلى "+اطلب الآن" مباشرة</p>
+                    </div>
+                    <Switch
+                      checked={Boolean(storeData?.storeFeatures?.enableCart ?? true)}
+                      onCheckedChange={(checked) =>
+                        setStoreData((prev: any) => ({
+                          ...prev,
+                          storeFeatures: { ...(prev.storeFeatures || {}), enableCart: checked },
+                        }))
+                      }
+                    />
+                  </div>
 
-                  <InputField
-                    label="شروط الخدمة"
-                    value={storeData.termsOfService || ''}
-                    onChange={(e: any) => setStoreData({ ...storeData, termsOfService: e.target.value })}
-                    placeholder="أدخل شروط الخدمة..."
-                    textarea
-                  />
+                  <div className="flex items-center justify-between rounded-xl border p-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">عرض آراء العملاء</p>
+                      <p className="text-sm text-gray-500">إظهار قسم التقييمات في واجهة المتجر</p>
+                    </div>
+                    <Switch
+                      checked={Boolean(storeData?.storeFeatures?.showReviews ?? true)}
+                      onCheckedChange={(checked) =>
+                        setStoreData((prev: any) => ({
+                          ...prev,
+                          storeFeatures: { ...(prev.storeFeatures || {}), showReviews: checked },
+                        }))
+                      }
+                    />
+                  </div>
 
-                  <InputField
-                    label="سياسة الإرجاع"
-                    value={storeData.returnPolicy || ''}
-                    onChange={(e: any) => setStoreData({ ...storeData, returnPolicy: e.target.value })}
-                    placeholder="أدخل سياسة الإرجاع..."
-                    textarea
-                  />
+                  <div className="flex items-center justify-between rounded-xl border p-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">عرض العروض الموسمية</p>
+                      <p className="text-sm text-gray-500">إظهار قسم العروض الموسمية في الصفحة</p>
+                    </div>
+                    <Switch
+                      checked={Boolean(storeData?.storeFeatures?.showSeasonalOffers ?? true)}
+                      onCheckedChange={(checked) =>
+                        setStoreData((prev: any) => ({
+                          ...prev,
+                          storeFeatures: { ...(prev.storeFeatures || {}), showSeasonalOffers: checked },
+                        }))
+                      }
+                    />
+                  </div>
 
                   <button
-                    onClick={() => handleSave({
-                      privacyPolicy: storeData.privacyPolicy,
-                      termsOfService: storeData.termsOfService,
-                      returnPolicy: storeData.returnPolicy,
-                    })}
+                    onClick={() => handleSave({ storeFeatures: storeData.storeFeatures })}
                     disabled={saving}
                     className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
                   >
-                    {saving ? 'جاري الحفظ...' : 'حفظ السياسات'}
+                    {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
                   </button>
                 </div>
               </div>

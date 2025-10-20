@@ -21,6 +21,10 @@ export class StorefrontService {
         phone: true,
         address: true,
         theme: true,
+        storeFeatures: true,
+        checkoutConfig: true,
+        thankYouMessage: true,
+        thankYouImage: true,
         status: true,
       },
     });

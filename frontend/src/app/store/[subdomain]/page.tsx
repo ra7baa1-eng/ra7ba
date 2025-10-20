@@ -74,6 +74,15 @@ export default function StorePage() {
   const [supportPhone, setSupportPhone] = useState('');
   const [reviewsEnabled, setReviewsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
+  const [enableCart, setEnableCart] = useState(true);
+  const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [wilaya, setWilaya] = useState('');
+  const [commune, setCommune] = useState('');
+  const [address, setAddress] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     loadProducts();
@@ -122,6 +131,11 @@ export default function StorePage() {
       setStoreDescription(store.descriptionAr || store.description || '');
       setStoreAddress(store.address || '');
       setSupportPhone(store.phone || '');
+      if (store.storeFeatures) {
+        if (typeof store.storeFeatures.enableCart === 'boolean') setEnableCart(store.storeFeatures.enableCart);
+        if (typeof store.storeFeatures.showReviews === 'boolean') setReviewsEnabled(store.storeFeatures.showReviews);
+        if (typeof store.storeFeatures.showSeasonalOffers === 'boolean') setOffersEnabled(store.storeFeatures.showSeasonalOffers);
+      }
     } catch (error) {
       console.error('Error loading store info:', error);
     }
@@ -192,6 +206,46 @@ export default function StorePage() {
     [filteredProducts]
   );
 
+  const handleSubmitOrder = async () => {
+    try {
+      setCheckoutSubmitting(true);
+      const subdomain = params.subdomain as string;
+      const itemsSrc = enableCart ? cart : checkoutItems;
+      if (!itemsSrc || itemsSrc.length === 0) {
+        setCheckoutSubmitting(false);
+        return;
+      }
+      const payload = {
+        customerName,
+        customerPhone,
+        wilaya,
+        commune,
+        address,
+        items: itemsSrc.map((it: any) => ({ productId: it.id, quantity: it.quantity || 1 })),
+        notes,
+      };
+      await storefrontApi.createOrder(subdomain, payload);
+      // Clear cart after success
+      if (enableCart) {
+        setCart([]);
+        localStorage.removeItem('cart');
+      }
+      setShowCheckout(false);
+      setCustomerName('');
+      setCustomerPhone('');
+      setWilaya('');
+      setCommune('');
+      setAddress('');
+      setNotes('');
+      setCheckoutItems([]);
+      router.push(`/store/${subdomain}`);
+    } catch (e) {
+      console.error('Failed to create order', e);
+    } finally {
+      setCheckoutSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -209,10 +263,14 @@ export default function StorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.35)]">
-                  <ShoppingBag size={24} />
-                </div>
+              <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 shadow-[0_0_20px_rgba(59,130,246,0.35)]">
+                {storeInfo?.logo ? (
+                  <Image src={storeInfo.logo} alt="Store logo" fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white">
+                    <ShoppingBag size={24} />
+                  </div>
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -229,30 +287,38 @@ export default function StorePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                className="relative h-11 rounded-xl border border-slate-200"
-                onClick={() => setShowCart(true)}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                عربة التسوق
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white">
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
+              {enableCart && (
+                <Button
+                  variant="ghost"
+                  className="relative h-11 rounded-xl border border-slate-200"
+                  onClick={() => setShowCart(true)}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  عربة التسوق
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
           {/* تنقّل صفحات المتجر */}
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
             <a href="#top" className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">الرئيسية</a>
             <a href="#categories" className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">التصنيفات</a>
-            <a href={`/store/${params.subdomain}/privacy`} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">سياسة الخصوصية</a>
             <a href={`/store/${params.subdomain}/support`} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">الدعم</a>
           </div>
         </div>
       </header>
+
+      {/* Banner */}
+      {storeInfo?.banner && (
+        <div className="w-full h-40 sm:h-56 md:h-64 lg:h-72 relative">
+          <Image src={storeInfo.banner} alt="Store banner" fill className="object-cover" />
+        </div>
+      )}
 
       <main className="container mx-auto px-4 py-10 space-y-12">
         {/* وصف المتجر والعنوان */}
@@ -355,12 +421,21 @@ export default function StorePage() {
                       {formatCurrency(heroProduct?.price || 0)}
                     </p>
                   </div>
-                  <Button
-                    className="h-11 rounded-xl px-6"
-                    onClick={() => addToCart(heroProduct)}
-                  >
-                    أضف للسلة الآن
-                  </Button>
+                  {enableCart ? (
+                    <Button
+                      className="h-11 rounded-xl px-6"
+                      onClick={() => addToCart(heroProduct)}
+                    >
+                      أضف للسلة الآن
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-11 rounded-xl px-6"
+                      onClick={() => { setCheckoutItems([{ ...heroProduct, quantity: 1 }]); setShowCheckout(true); }}
+                    >
+                      اطلب الآن
+                    </Button>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="flex-col items-start gap-4 text-sm text-slate-500">
@@ -478,7 +553,7 @@ export default function StorePage() {
             {spotlightProducts.map((product) => (
               <motion.div key={product.id} variants={fadeIn}>
                 <Card className="group h-full rounded-2xl border border-slate-100 bg-white/80 shadow-lg transition-all hover:-translate-y-2 hover:border-primary-100">
-                  <div className="relative h-56 overflow-hidden rounded-2xl bg-slate-100">
+                  <a href={`/store/${params.subdomain}/products/${product.slug}`} className="relative block h-56 overflow-hidden rounded-2xl bg-slate-100">
                     {product.images?.[0] ? (
                       <Image
                         src={product.images[0]}
@@ -499,13 +574,15 @@ export default function StorePage() {
                         الأكثر طلباً
                       </Badge>
                     </div>
-                  </div>
+                  </a>
                   <CardContent className="space-y-3 pt-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <CardTitle className="text-lg text-slate-900">
-                          {product.name}
-                        </CardTitle>
+                        <a href={`/store/${params.subdomain}/products/${product.slug}`} className="block">
+                          <CardTitle className="text-lg text-slate-900">
+                            {product.name}
+                          </CardTitle>
+                        </a>
                         <CardDescription className="line-clamp-2 text-sm leading-relaxed text-slate-500">
                           {product.description || 'منتج عالي الجودة، مضمون ومصمم ليناسب احتياجاتك اليومية.'}
                         </CardDescription>
@@ -527,12 +604,21 @@ export default function StorePage() {
                         {formatCurrency(product.price)}
                       </p>
                     </div>
-                    <Button
-                      className="h-11 rounded-xl px-5"
-                      onClick={() => addToCart(product)}
-                    >
-                      أضف للسلة
-                    </Button>
+                    {enableCart ? (
+                      <Button
+                        className="h-11 rounded-xl px-5"
+                        onClick={() => addToCart(product)}
+                      >
+                        أضف للسلة
+                      </Button>
+                    ) : (
+                      <Button
+                        className="h-11 rounded-xl px-5"
+                        onClick={() => { setCheckoutItems([{ ...product, quantity: 1 }]); setShowCheckout(true); }}
+                      >
+                        اطلب الآن
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -737,6 +823,66 @@ export default function StorePage() {
                   </div>
                 </>
               )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCheckout && (
+          <>
+            <div
+              className="fixed inset-0 z-50 bg-black/50"
+              onClick={() => setShowCheckout(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b px-6 py-4">
+                  <h3 className="text-xl font-bold text-slate-900">إتمام الطلب</h3>
+                  <Button variant="ghost" onClick={() => setShowCheckout(false)} className="h-10 px-3 text-slate-500">
+                    <X size={18} />
+                  </Button>
+                </div>
+
+                <div className="px-6 py-5 grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input placeholder="الاسم الكامل" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                    <Input placeholder="رقم الهاتف" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input placeholder="الولاية" value={wilaya} onChange={(e) => setWilaya(e.target.value)} />
+                    <Input placeholder="البلدية" value={commune} onChange={(e) => setCommune(e.target.value)} />
+                  </div>
+                  <Input placeholder="العنوان الكامل" value={address} onChange={(e) => setAddress(e.target.value)} />
+                  <Input placeholder="ملاحظات إضافية (اختياري)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+                  <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span>إجمالي المنتجات</span>
+                      <span className="font-bold text-primary-600">{formatCurrency((enableCart ? cart : checkoutItems).reduce((s, it) => s + it.price * (it.quantity || 1), 0))}</span>
+                    </div>
+                    <div className="mt-2 text-slate-500">سيتم احتساب الشحن عند التأكيد.</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 border-t px-6 py-4">
+                  <Button
+                    className="h-11 rounded-xl px-6"
+                    onClick={handleSubmitOrder}
+                    disabled={checkoutSubmitting || !customerName || !customerPhone || !wilaya || !commune || !address}
+                  >
+                    {checkoutSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+                  </Button>
+                  <Button variant="secondary" className="h-11 rounded-xl px-6" onClick={() => setShowCheckout(false)}>
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </>
         )}

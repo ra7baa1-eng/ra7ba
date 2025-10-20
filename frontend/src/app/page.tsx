@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { Sparkles, Zap, TrendingUp, Shield, Rocket, Star } from 'lucide-react';
+import { Sparkles, Zap, Rocket } from 'lucide-react';
 
 export default function HomePage() {
   const [text, setText] = useState('');
@@ -128,9 +128,9 @@ export default function HomePage() {
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap justify-center items-center gap-8 mb-16 opacity-70">
-              <div className="text-sm text-gray-500">موثوق من قبل أكثر من</div>
+              <div className="text-sm text-gray-500">موثوق من قبل</div>
               <div className="font-bold text-2xl text-primary-600">500+</div>
-              <div className="text-sm text-gray-500">تاجر جزائري</div>
+              <div className="text-sm text-gray-500">تجار جزائريين</div>
             </div>
 
             {/* Stats */}
@@ -190,7 +190,7 @@ export default function HomePage() {
               <div className="text-5xl mb-4">🚚</div>
               <h3 className="text-2xl font-bold mb-4">توصيل سريع</h3>
               <p className="text-gray-600">
-                تكامل مع اكثر من 50 شركة توصيل رفع طلباتك بكل سهولة تامة
+                تكامل مع أكثر من 50 شركة توصيل لرفع طلباتك بكل سهولة.
               </p>
             </div>
 
@@ -232,7 +232,7 @@ export default function HomePage() {
               شركاؤنا في التوصيل 🚚
             </h2>
             <p className="text-xl text-gray-600">
-              تكامل مع أكثر من 50 شركة توصيل - رفع طلباتك بكل سهولة تامة
+              تكامل مع أكثر من 50 شركة توصيل لرفع طلباتك بكل سهولة.
             </p>
           </div>
           <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
