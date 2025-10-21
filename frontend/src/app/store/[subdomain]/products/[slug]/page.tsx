@@ -111,7 +111,7 @@ export default function ProductDetailPage() {
         <div className="text-center">
           <ShoppingBag className="mx-auto text-slate-300" size={48} />
           <p className="mt-3 text-slate-600">هذا المنتج غير متاح</p>
-          <Button className="mt-4" onClick={() => router.push(`/store/${subdomain}`)}>عودة للمتجر</Button>
+          <Button onClick={() => router.push(`/store/${subdomain}/products/${product.slug}`)}>عودة للمتجر</Button>
         </div>
       </div>
     );
