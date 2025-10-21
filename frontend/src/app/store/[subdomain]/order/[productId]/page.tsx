@@ -68,7 +68,7 @@ export default function OrderPage() {
       setCities(data);
       
       // Extract unique wilayas
-      const uniqueWilayas = Array.from(new Set(data.map((c: City) => c.wilaya_name)));
+      const uniqueWilayas = Array.from(new Set(data.map((c: City) => c.wilaya_name))) as string[];
       setWilayas(uniqueWilayas.sort());
     } catch (error) {
       console.error('Failed to load cities', error);
@@ -84,7 +84,7 @@ export default function OrderPage() {
     const filteredDairas = cities
       .filter(c => c.wilaya_name === wilaya)
       .map(c => c.daira_name);
-    const uniqueDairas = Array.from(new Set(filteredDairas));
+    const uniqueDairas = Array.from(new Set(filteredDairas)) as string[];
     setDairas(uniqueDairas.sort());
     setCommunes([]);
   };
@@ -97,7 +97,7 @@ export default function OrderPage() {
     const filteredCommunes = cities
       .filter(c => c.wilaya_name === selectedWilaya && c.daira_name === daira)
       .map(c => c.commune_name);
-    setCommunes(filteredCommunes.sort());
+    setCommunes(filteredCommunes.sort() as string[]);
   };
 
   const handleSubmitOrder = async () => {
