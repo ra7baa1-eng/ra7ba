@@ -1,6 +1,20 @@
 import type { Metadata } from 'next';
+import { Cairo, Tajawal } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+
+const cairo = Cairo({ 
+  subsets: ['arabic', 'latin'],
+  variable: '--font-cairo',
+  display: 'swap',
+});
+
+const tajawal = Tajawal({ 
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-tajawal',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'رحبة - Rahba | منصة التجارة الإلكترونية',
@@ -18,7 +32,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="font-arabic antialiased">
+      <body className={`${cairo.variable} ${tajawal.variable} font-cairo antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

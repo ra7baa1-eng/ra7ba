@@ -74,12 +74,12 @@ model User {
   emailVerified Boolean  @default(false)
 
   // Relations
-  tenant        Tenant?        @relation("TenantOwner")
-  tenantId      String?        @unique
-  refreshTokens RefreshToken[]
-  orders        Order[]
+  tenant                Tenant?        @relation("TenantOwner")
+  tenantId              String?        @unique
+  refreshTokens         RefreshToken[]
+  orders                Order[]
   // Back-relations
-  stores        Store[]
+  stores                Store[]
   paymentProofsUploaded PaymentProof[]
 
   createdAt DateTime @default(now())
@@ -104,9 +104,8 @@ model RefreshToken {
 
 // Tenant (Each Merchant's Store)
 model Tenant {
-  id             String       @id @default(uuid())
-  subdomain      String       @unique
-  customDomain   String?      @unique
+  id             String  @id @default(uuid())
+  subdomain      String  @unique
   name           String
   nameAr         String
   description    String?
@@ -119,17 +118,17 @@ model Tenant {
   theme          Json? // Store theme customization
   checkoutConfig Json? // Checkout required/optional fields configuration
   storeFeatures  Json? // Store features configuration
-  
+
   // Policies & Legal
   privacyPolicy  String? @db.Text
   termsOfService String? @db.Text
   returnPolicy   String? @db.Text
-  
+
   // Thank You Page
   thankYouMessage String?
   thankYouImage   String?
-  
-  status         TenantStatus @default(ACTIVE)
+
+  status TenantStatus @default(ACTIVE)
 
   // Trial limits
   trialEndsAt  DateTime?
@@ -137,15 +136,20 @@ model Tenant {
   productCount Int       @default(0)
 
   // Relations
-  ownerId      String        @unique
-  owner        User          @relation("TenantOwner", fields: [ownerId], references: [id])
-  subscription Subscription?
-  products     Product[]
-  orders       Order[]
-  categories   Category[]
-  payments     Payment[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  ownerId              String                @unique
+  owner                User                  @relation("TenantOwner", fields: [ownerId], references: [id])
+  subscription         Subscription?
+  products             Product[]
+  orders               Order[]
+  categories           Category[]
+  payments             Payment[]
+  shippingConfig       ShippingConfig?       @relation("TenantShipping")
+  marketingIntegration MarketingIntegration? @relation("TenantMarketing")
+  telegramBot          TelegramBot?          @relation("TenantTelegram")
+  customDomainConfig   CustomDomain?         @relation("TenantDomain")
+  appPermissions       AppPermission[]       @relation("TenantPermissions")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([subdomain])
   @@index([status])
@@ -263,28 +267,28 @@ model Product {
   metaTitle       String?
   metaDescription String?
   seoKeywords     String? // كلمات مفتاحية SEO
-  
+
   // الشحن والأبعاد
-  weight         Decimal? @db.Decimal(10, 2) // الوزن
-  weightUnit     String?  @default("kg") // kg أو g
-  length         Decimal? @db.Decimal(10, 2) // الطول
-  width          Decimal? @db.Decimal(10, 2) // العرض
-  height         Decimal? @db.Decimal(10, 2) // الارتفاع
-  dimensionUnit  String?  @default("cm") // cm أو m
-  shippingFee    Decimal? @db.Decimal(10, 2) // رسوم شحن مخصصة
-  freeShipping   Boolean  @default(false) // شحن مجاني
-  
+  weight        Decimal? @db.Decimal(10, 2) // الوزن
+  weightUnit    String?  @default("kg") // kg أو g
+  length        Decimal? @db.Decimal(10, 2) // الطول
+  width         Decimal? @db.Decimal(10, 2) // العرض
+  height        Decimal? @db.Decimal(10, 2) // الارتفاع
+  dimensionUnit String?  @default("cm") // cm أو m
+  shippingFee   Decimal? @db.Decimal(10, 2) // رسوم شحن مخصصة
+  freeShipping  Boolean  @default(false) // شحن مجاني
+
   // المخزون المتقدم
-  lowStockAlert  Int?     // تنبيه عند انخفاض المخزون
-  allowBackorder Boolean  @default(false) // السماح بالطلب المسبق
-  
+  lowStockAlert  Int? // تنبيه عند انخفاض المخزون
+  allowBackorder Boolean @default(false) // السماح بالطلب المسبق
+
   // التسعير المتدرج والشارات
-  bulkPricing    Json?    @default("[]") // [{min, max, price}]
-  badges         Json?    @default("[]") // ['جديد', 'الأكثر مبيعاً']
-  
+  bulkPricing Json? @default("[]") // [{min, max, price}]
+  badges      Json? @default("[]") // ['جديد', 'الأكثر مبيعاً']
+
   // المنتجات المرتبطة
-  relatedProducts    Json? @default("[]") // [productId1, productId2]
-  crossSellProducts  Json? @default("[]") // منتجات يُشترى معها عادة
+  relatedProducts   Json? @default("[]") // [productId1, productId2]
+  crossSellProducts Json? @default("[]") // منتجات يُشترى معها عادة
 
   orderItems   OrderItem[]
   // Variants relations
@@ -532,23 +536,23 @@ enum PaymentMethod {
 
 // Merchant Store entity (separate from Tenant for SaaS requirements)
 model Store {
-  id                  String                  @id @default(uuid())
-  name                String
-  slug                String                  @unique
-  ownerId             String
-  owner               User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  email               String?
-  phone               String?
-  wilaya              String?
-  daira               String?
-  baladiya            String?
-  logoUrl             String?
-  bannerUrl           String?
-  colors              Json?
-  landingPage         Json?
-  checkoutConfig      Json?
-  subscriptionStatus  StoreSubscriptionStatus @default(PENDING)
-  isActive            Boolean                 @default(true)
+  id                 String                  @id @default(uuid())
+  name               String
+  slug               String                  @unique
+  ownerId            String
+  owner              User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  email              String?
+  phone              String?
+  wilaya             String?
+  daira              String?
+  baladiya           String?
+  logoUrl            String?
+  bannerUrl          String?
+  colors             Json?
+  landingPage        Json?
+  checkoutConfig     Json?
+  subscriptionStatus StoreSubscriptionStatus @default(PENDING)
+  isActive           Boolean                 @default(true)
 
   // Relations
   shippingOptions ShippingOption[]
@@ -559,39 +563,39 @@ model Store {
 }
 
 model PaymentProof {
-  id            String             @id @default(uuid())
-  storeId       String
-  store         Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  uploadedById  String?
-  uploadedBy    User?              @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
-  fileUrl       String
-  emailOfStore  String
-  amount        Decimal?           @db.Decimal(10, 2)
-  status        PaymentProofStatus @default(PENDING)
-  adminNote     String?
-  reviewedAt    DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id           String             @id @default(uuid())
+  storeId      String
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  uploadedById String?
+  uploadedBy   User?              @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  fileUrl      String
+  emailOfStore String
+  amount       Decimal?           @db.Decimal(10, 2)
+  status       PaymentProofStatus @default(PENDING)
+  adminNote    String?
+  reviewedAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([storeId])
   @@index([status])
 }
 
 model ShippingOption {
-  id          String          @id @default(uuid())
+  id          String            @id @default(uuid())
   storeId     String?
-  store       Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  store       Store?            @relation(fields: [storeId], references: [id], onDelete: SetNull)
   name        String
   type        ShippingType
-  price       Decimal         @db.Decimal(10, 2)
-  minWeight   Decimal?        @db.Decimal(10, 2)
-  maxWeight   Decimal?        @db.Decimal(10, 2)
+  price       Decimal           @db.Decimal(10, 2)
+  minWeight   Decimal?          @db.Decimal(10, 2)
+  maxWeight   Decimal?          @db.Decimal(10, 2)
   providerId  String?
   provider    ShipmentProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
   credentials Json?
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([storeId])
   @@index([providerId])
@@ -599,44 +603,177 @@ model ShippingOption {
 }
 
 model ShipmentProvider {
-  id             String           @id @default(uuid())
-  name           String
-  country        String           @default("DZ")
-  token          String?
-  providerId     String?
-  description    String?
-  isActive       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              String           @id @default(uuid())
+  name            String
+  country         String           @default("DZ")
+  token           String?
+  providerId      String?
+  description     String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   shippingOptions ShippingOption[]
 
-  @@index([isActive])
   @@unique([name])
+  @@index([isActive])
 }
 
 // Administrative divisions
 model Daira {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   wilayaCode String
   name       String
   nameAr     String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
   baladiyas  Baladiya[]
 
-  @@index([wilayaCode])
   @@unique([wilayaCode, name])
+  @@index([wilayaCode])
 }
 
 model Baladiya {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   dairaId   String
-  daira     Daira   @relation(fields: [dairaId], references: [id], onDelete: Cascade)
+  daira     Daira    @relation(fields: [dairaId], references: [id], onDelete: Cascade)
   name      String
   nameAr    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([dairaId])
   @@unique([dairaId, name])
+  @@index([dairaId])
+}
+
+// ==================== NEW FEATURES ====================
+
+// Shipping Configuration for each Tenant
+model ShippingConfig {
+  id       String @id @default(uuid())
+  tenantId String @unique
+  tenant   Tenant @relation("TenantShipping", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Default shipping settings
+  defaultShippingFee    Decimal  @default(600) @db.Decimal(10, 2)
+  freeShippingThreshold Decimal? @db.Decimal(10, 2) // Free shipping above this amount
+
+  // Shipping companies integration
+  yalidineEnabled   Boolean @default(false)
+  yalidineApiKey    String?
+  yalidineApiSecret String?
+
+  zrExpressEnabled   Boolean @default(false)
+  zrExpressApiKey    String?
+  zrExpressApiSecret String?
+
+  // Custom shipping zones (JSON: [{wilaya: "Alger", fee: 400}, ...])
+  customZones Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// Marketing Integrations (Facebook, TikTok, Google)
+model MarketingIntegration {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation("TenantMarketing", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Facebook Pixel
+  facebookPixelId     String?
+  facebookAccessToken String?
+  facebookEnabled     Boolean @default(false)
+
+  // TikTok Pixel
+  tiktokPixelId     String?
+  tiktokAccessToken String?
+  tiktokEnabled     Boolean @default(false)
+
+  // Google Analytics & Sheets
+  googleAnalyticsId    String?
+  googleSheetsId       String?
+  googleServiceAccount Json? // Service account JSON
+  googleEnabled        Boolean @default(false)
+
+  // Snapchat Pixel
+  snapchatPixelId String?
+  snapchatEnabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId])
+  @@index([tenantId])
+}
+
+// Telegram Bot Configuration
+model TelegramBot {
+  id       String @id @default(uuid())
+  tenantId String @unique
+  tenant   Tenant @relation("TenantTelegram", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  botToken String? // Bot token from BotFather
+  chatId   String? // Merchant's chat ID
+  enabled  Boolean @default(false)
+
+  // Notification preferences
+  notifyOnNewOrder    Boolean @default(true)
+  notifyOnOrderStatus Boolean @default(true)
+  notifyOnLowStock    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// Custom Domain Configuration
+model CustomDomain {
+  id       String @id @default(uuid())
+  tenantId String @unique
+  tenant   Tenant @relation("TenantDomain", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  domain     String  @unique
+  isVerified Boolean @default(false)
+  dnsRecords Json? // Required DNS records
+  sslEnabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([domain])
+}
+
+// App Permissions (Admin controls which tenant can use which feature)
+model AppPermission {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation("TenantPermissions", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Feature flags
+  canUseCustomDomain      Boolean @default(false)
+  canUseFacebookPixel     Boolean @default(false)
+  canUseTikTokPixel       Boolean @default(false)
+  canUseGoogleSheets      Boolean @default(false)
+  canUseTelegramBot       Boolean @default(false)
+  canUseShippingAPI       Boolean @default(false)
+  canCustomizeTheme       Boolean @default(true)
+  canUseAdvancedAnalytics Boolean @default(false)
+
+  // Limits
+  maxProducts  Int @default(100)
+  maxOrders    Int @default(1000)
+  maxStorageGB Int @default(5)
+
+  grantedBy String? // Admin ID who granted permissions
+  grantedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId])
+  @@index([tenantId])
 }

@@ -71,6 +71,8 @@ const config: Config = {
       },
       fontFamily: {
         arabic: ['Cairo', 'sans-serif'],
+        cairo: ['Cairo', 'sans-serif'],
+        tajawal: ['Tajawal', 'sans-serif'],
       },
     },
   },
