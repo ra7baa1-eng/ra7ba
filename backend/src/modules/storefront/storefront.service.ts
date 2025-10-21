@@ -156,6 +156,12 @@ export class StorefrontService {
       throw new NotFoundException('Product not found');
     }
 
+    // Increment views counter
+    await this.prisma.product.update({
+      where: { id: product.id },
+      data: { views: { increment: 1 } },
+    });
+
     // Get related products
     const relatedProducts = await this.prisma.product.findMany({
       where: {
@@ -243,6 +249,7 @@ export class StorefrontService {
     customerPhone: string;
     customerEmail?: string;
     wilaya: string;
+    daira?: string;
     commune: string;
     address: string;
     items: Array<{
@@ -321,6 +328,7 @@ export class StorefrontService {
             customerPhone: orderData.customerPhone,
             customerEmail: orderData.customerEmail,
             wilaya: orderData.wilaya,
+            daira: orderData.daira,
             commune: orderData.commune,
             address: orderData.address,
             customerNotes: orderData.notes,

@@ -262,6 +262,7 @@ model Product {
   // Status
   isActive   Boolean @default(true)
   isFeatured Boolean @default(false)
+  views      Int     @default(0) // عداد الزيارات
 
   // SEO
   metaTitle       String?
@@ -329,7 +330,8 @@ model Order {
 
   // Delivery info
   wilaya     String
-  commune    String?
+  daira      String? // الدائرة
+  commune    String? // البلدية
   address    String
   postalCode String?
 
