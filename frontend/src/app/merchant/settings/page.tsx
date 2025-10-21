@@ -67,9 +67,6 @@ export default function MerchantSettings() {
     theme: {},
     checkoutConfig: {},
     storeFeatures: {},
-    privacyPolicy: '',
-    termsOfService: '',
-    returnPolicy: '',
     thankYouMessage: '',
     thankYouImage: '',
   });

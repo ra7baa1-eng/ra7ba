@@ -64,18 +64,6 @@ export class UpdateStoreSettingsDto {
 
   @IsOptional()
   @IsString()
-  privacyPolicy?: string;
-
-  @IsOptional()
-  @IsString()
-  termsOfService?: string;
-
-  @IsOptional()
-  @IsString()
-  returnPolicy?: string;
-
-  @IsOptional()
-  @IsString()
   thankYouMessage?: string;
 
   @IsOptional()

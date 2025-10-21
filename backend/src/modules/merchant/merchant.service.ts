@@ -103,9 +103,6 @@ export class MerchantService {
       telegramChatId?: string;
       checkoutConfig?: any;
       storeFeatures?: any;
-      privacyPolicy?: string;
-      termsOfService?: string;
-      returnPolicy?: string;
       thankYouMessage?: string;
       thankYouImage?: string;
     },
@@ -128,9 +125,6 @@ export class MerchantService {
         telegramChatId: data.telegramChatId,
         checkoutConfig: data.checkoutConfig,
         storeFeatures: data.storeFeatures,
-        privacyPolicy: data.privacyPolicy,
-        termsOfService: data.termsOfService,
-        returnPolicy: data.returnPolicy,
         thankYouMessage: data.thankYouMessage,
         thankYouImage: data.thankYouImage,
       },
