@@ -331,6 +331,7 @@ export class StorefrontService {
             daira: orderData.daira,
             commune: orderData.commune,
             address: orderData.address,
+            shippingAddress: orderData.address,
             customerNotes: orderData.notes,
             subtotal,
             shippingCost: shippingFee,

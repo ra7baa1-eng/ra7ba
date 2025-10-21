@@ -329,11 +329,12 @@ model Order {
   total        Decimal @db.Decimal(10, 2)
 
   // Delivery info
-  wilaya     String
-  daira      String? // الدائرة
-  commune    String? // البلدية
-  address    String
-  postalCode String?
+  wilaya          String
+  daira           String? // الدائرة
+  commune         String? // البلدية
+  address         String
+  shippingAddress String  @default("")
+  postalCode      String?
 
   deliveryCompany DeliveryCompany?
   trackingNumber  String?

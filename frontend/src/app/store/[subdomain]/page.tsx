@@ -22,6 +22,16 @@ import {
 } from 'lucide-react';
 import { storefrontApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+
+// Helper function to strip HTML tags
+const stripHtml = (html: string) => {
+  if (typeof window !== 'undefined') {
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+  return html.replace(/<[^>]*>/g, '');
+};
 import {
   Badge,
   Button,
@@ -351,9 +361,6 @@ export default function StorePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent_60%)]" />
               <div className="relative flex h-full flex-col justify-between p-10">
                 <div className="space-y-6">
-                  <Badge variant="outline" className="bg-white/90 text-primary-700">
-                    عرض حصري
-                  </Badge>
                   <h2 className="text-4xl font-black leading-tight">
                     اكتشف أفضل المنتجات المختارة خصيصاً لك
                   </h2>
@@ -393,7 +400,7 @@ export default function StorePage() {
                   {heroProduct?.name}
                 </CardTitle>
                 <CardDescription className="text-slate-500">
-                  {heroProduct?.descriptionAr || heroProduct?.description || 'منتج فاخر من مجموعتنا المختارة بعناية'}
+                  {stripHtml(heroProduct?.descriptionAr || heroProduct?.description || 'منتج فاخر من مجموعتنا المختارة بعناية')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -580,7 +587,7 @@ export default function StorePage() {
                           </CardTitle>
                         </a>
                         <CardDescription className="line-clamp-2 text-sm leading-relaxed text-slate-500">
-                          {product.descriptionAr || product.description || 'منتج عالي الجودة، مضمون ومصمم ليناسب احتياجاتك اليومية.'}
+                          {stripHtml(product.descriptionAr || product.description || 'منتج عالي الجودة، مضمون ومصمم ليناسب احتياجاتك اليومية.')}
                         </CardDescription>
                       </div>
                       <button className="text-slate-300 transition hover:text-rose-500">
