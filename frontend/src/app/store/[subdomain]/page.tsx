@@ -389,14 +389,11 @@ export default function StorePage() {
 
             <Card className="rounded-3xl border border-slate-100 bg-white/80 shadow-lg backdrop-blur">
               <CardHeader className="items-start gap-2">
-                <Badge variant="outline" className="bg-primary-50 text-primary-600">
-                  المنتج المميز
-                </Badge>
                 <CardTitle className="text-2xl text-slate-900">
                   {heroProduct?.name}
                 </CardTitle>
                 <CardDescription className="text-slate-500">
-                  {heroProduct?.description || 'منتج فاخر من مجموعتنا المختارة بعناية'}
+                  {heroProduct?.descriptionAr || heroProduct?.description || 'منتج فاخر من مجموعتنا المختارة بعناية'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -507,8 +504,7 @@ export default function StorePage() {
         <section id="categories" className="space-y-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-2">
-              <h3 className="text-3xl font-black text-slate-900">استكشف تشكيلتنا</h3>
-              <p className="text-slate-500">اختر الفئة المناسبة لك أو استخدم البحث للعثور على منتجك بسرعة</p>
+              <h3 className="text-3xl font-black text-slate-900">المنتجات</h3>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
@@ -584,7 +580,7 @@ export default function StorePage() {
                           </CardTitle>
                         </a>
                         <CardDescription className="line-clamp-2 text-sm leading-relaxed text-slate-500">
-                          {product.description || 'منتج عالي الجودة، مضمون ومصمم ليناسب احتياجاتك اليومية.'}
+                          {product.descriptionAr || product.description || 'منتج عالي الجودة، مضمون ومصمم ليناسب احتياجاتك اليومية.'}
                         </CardDescription>
                       </div>
                       <button className="text-slate-300 transition hover:text-rose-500">

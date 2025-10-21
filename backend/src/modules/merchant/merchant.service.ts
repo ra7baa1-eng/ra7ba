@@ -281,9 +281,12 @@ export class MerchantService {
       throw new ForbiddenException(limits.reason);
     }
 
-    // Generate slug if not provided
+    // Generate unique slug
     if (!data.slug) {
-      data.slug = this.generateSlug(data.name);
+      data.slug = await this.generateUniqueSlug(tenantId, data.name);
+    } else {
+      // Ensure provided slug is unique
+      data.slug = await this.generateUniqueSlug(tenantId, data.slug);
     }
 
     const product = await this.prisma.product.create({
@@ -557,5 +560,29 @@ export class MerchantService {
       .toLowerCase()
       .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+
+  // Helper: Generate unique slug
+  private async generateUniqueSlug(tenantId: string, text: string): Promise<string> {
+    let slug = this.generateSlug(text);
+    let counter = 1;
+    
+    // Check if slug exists
+    while (true) {
+      const existing = await this.prisma.product.findFirst({
+        where: {
+          tenantId,
+          slug,
+        },
+      });
+      
+      if (!existing) {
+        return slug;
+      }
+      
+      // Add counter to make it unique
+      slug = `${this.generateSlug(text)}-${counter}`;
+      counter++;
+    }
   }
 }
