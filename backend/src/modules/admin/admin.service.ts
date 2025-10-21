@@ -1017,40 +1017,44 @@ END $$;`;
 
   // Approve custom domain
   async approveDomain(tenantId: string, domain: string) {
-    return this.prisma.tenant.update({
-      where: { id: tenantId },
-      data: { customDomain: domain },
+    return this.prisma.customDomain.update({
+      where: { tenantId },
+      data: { 
+        isVerified: true,
+        sslEnabled: true,
+      },
     });
   }
 
   // Reject custom domain
   async rejectDomain(tenantId: string, reason: string) {
-    return this.prisma.tenant.update({
-      where: { id: tenantId },
-      data: { customDomain: null },
+    return this.prisma.customDomain.delete({
+      where: { tenantId },
     });
   }
 
   // Get all custom domain requests
   async getCustomDomainRequests() {
-    return this.prisma.tenant.findMany({
+    return this.prisma.customDomain.findMany({
       where: {
-        customDomain: {
-          not: null,
-        },
+        isVerified: false,
       },
       include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        subscription: {
-          select: {
-            plan: true,
-            status: true,
+        tenant: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            subscription: {
+              select: {
+                plan: true,
+                status: true,
+              },
+            },
           },
         },
       },
