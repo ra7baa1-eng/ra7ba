@@ -341,12 +341,11 @@ export default function StorefrontPage() {
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -5 }}
                   className={`group cursor-pointer rounded-2xl overflow-hidden transition-all duration-300 ${
-                    darkMode 
-                      ? 'bg-gray-800 hover:bg-gray-750' 
-                      : 'bg-white hover:shadow-xl'
+                    darkMode
+                      ? 'bg-gray-800 hover:bg-gray-750'
+                      : 'bg-white hover:shadow-xl hover:shadow-purple-500/25'
                   } ${viewMode === 'list' ? 'flex gap-4' : ''}`}
                   onClick={() => router.push(`/store/${subdomain}/products/${product.slug}`)}
-                  style={darkMode ? {} : { '&:hover': neonGlow }}
                 >
                   {/* Product Image */}
                   <div className={`relative overflow-hidden ${
