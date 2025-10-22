@@ -1,0 +1,60 @@
+# Railway Configuration for Backend Deployment
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm run start:railway"
+healthcheckPath = "/api"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[experimental]
+allowedHostDirs = []
+
+[services]
+[services.backend]
+internalPort = 10000
+processes = ["web"]
+healthCheck = {}
+
+[[services.backend.ports]]
+port = 10000
+handlers = ["http"]
+
+[services.backend.environmentVariables]
+NODE_ENV = "production"
+PORT = "10000"
+HOSTNAME = "0.0.0.0"
+
+# Database Configuration (PostgreSQL provided by Railway)
+DATABASE_URL = "${{ DATABASE_URL }}"
+DIRECT_URL = "${{ DIRECT_URL }}"
+
+# Authentication
+JWT_SECRET = "${{ JWT_SECRET }}"
+JWT_REFRESH_SECRET = "${{ JWT_REFRESH_SECRET }}"
+
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY = "${{ CLERK_PUBLISHABLE_KEY }}"
+CLERK_SECRET_KEY = "${{ CLERK_SECRET_KEY }}"
+
+# Email Service
+SMTP_HOST = "${{ SMTP_HOST }}"
+SMTP_PORT = "${{ SMTP_PORT }}"
+SMTP_USER = "${{ SMTP_USER }}"
+SMTP_PASS = "${{ SMTP_PASS }}"
+
+# File Upload Service
+IMGBB_API_KEY = "${{ IMGBB_API_KEY }}"
+
+# Payment Processing
+STRIPE_PUBLISHABLE_KEY = "${{ STRIPE_PUBLISHABLE_KEY }}"
+STRIPE_SECRET_KEY = "${{ STRIPE_SECRET_KEY }}"
+STRIPE_WEBHOOK_SECRET = "${{ STRIPE_WEBHOOK_SECRET }}"
+
+# Supabase Integration
+NEXT_PUBLIC_SUPABASE_URL = "${{ NEXT_PUBLIC_SUPABASE_URL }}"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "${{ NEXT_PUBLIC_SUPABASE_ANON_KEY }}"
+SUPABASE_SERVICE_ROLE_KEY = "${{ SUPABASE_SERVICE_ROLE_KEY }}"

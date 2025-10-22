@@ -335,19 +335,107 @@ export default function MerchantSettings() {
               </div>
             )}
 
-            {/* Features */}
+            {/* Design & Colors */}
+            {activeTab === 'design' && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Palette className="w-6 h-6 text-blue-500" />
+                  التصميم والألوان
+                </h2>
+
+                <div className="space-y-6">
+                  {/* Primary Color */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      اللون الأساسي للمتجر
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-10 h-10 rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-500 transition-colors"
+                          style={{ backgroundColor: storeData?.theme?.primaryColor || '#3B82F6' }}
+                          onClick={() => {
+                            const color = prompt('أدخل لون أساسي جديد (مثال: #3B82F6)');
+                            if (color) {
+                              setStoreData((prev: any) => ({
+                                ...prev,
+                                theme: { ...(prev.theme || {}), primaryColor: color },
+                              }));
+                            }
+                          }}
+                        ></div>
+                        <span className="text-sm text-gray-600">
+                          {storeData?.theme?.primaryColor || '#3B82F6'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Font Family */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      خط النص
+                    </label>
+                    <select
+                      value={storeData?.theme?.fontFamily || 'cairo'}
+                      onChange={(e) => setStoreData((prev: any) => ({
+                        ...prev,
+                        theme: { ...(prev.theme || {}), fontFamily: e.target.value },
+                      }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="cairo">Cairo (الافتراضي)</option>
+                      <option value="tajawal">Tajawal</option>
+                      <option value="amiri">Amiri</option>
+                      <option value="inter">Inter</option>
+                      <option value="poppins">Poppins</option>
+                    </select>
+                  </div>
+
+                  {/* Layout Direction */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      اتجاه التخطيط
+                    </label>
+                    <select
+                      value={storeData?.theme?.direction || 'rtl'}
+                      onChange={(e) => setStoreData((prev: any) => ({
+                        ...prev,
+                        theme: { ...(prev.theme || {}), direction: e.target.value },
+                      }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="rtl">من اليمين إلى اليسار (RTL)</option>
+                      <option value="ltr">من اليسار إلى اليمين (LTR)</option>
+                    </select>
+                  </div>
+
+                  {/* Store Logo & Banner - Already implemented above */}
+
+                  <button
+                    onClick={() => handleSave({ theme: storeData.theme })}
+                    disabled={saving}
+                    className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {saving ? 'جاري الحفظ...' : 'حفظ التصميم'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Features Tab */}
             {activeTab === 'features' && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                   <Sparkles className="w-6 h-6 text-blue-500" />
-                  الميزات
+                  الميزات المتقدمة
                 </h2>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between rounded-xl border p-4">
                     <div>
                       <p className="font-semibold text-gray-800">تفعيل سلة التسوق</p>
-                      <p className="text-sm text-gray-500">عند الإيقاف يتم التبديل إلى "+اطلب الآن" مباشرة</p>
+                      <p className="text-sm text-gray-500">عند الإيقاف يتم التبديل إلى "اطلب الآن" مباشرة</p>
                     </div>
                     <Switch
                       checked={Boolean(storeData?.storeFeatures?.enableCart ?? true)}
@@ -362,15 +450,15 @@ export default function MerchantSettings() {
 
                   <div className="flex items-center justify-between rounded-xl border p-4">
                     <div>
-                      <p className="font-semibold text-gray-800">عرض آراء العملاء</p>
-                      <p className="text-sm text-gray-500">إظهار قسم التقييمات في واجهة المتجر</p>
+                      <p className="font-semibold text-gray-800">تفعيل الخصومات</p>
+                      <p className="text-sm text-gray-500">السماح بعرض منتجات مع خصومات</p>
                     </div>
                     <Switch
-                      checked={Boolean(storeData?.storeFeatures?.showReviews ?? true)}
+                      checked={Boolean(storeData?.storeFeatures?.enableDiscounts ?? true)}
                       onCheckedChange={(checked) =>
                         setStoreData((prev: any) => ({
                           ...prev,
-                          storeFeatures: { ...(prev.storeFeatures || {}), showReviews: checked },
+                          storeFeatures: { ...(prev.storeFeatures || {}), enableDiscounts: checked },
                         }))
                       }
                     />
@@ -378,15 +466,31 @@ export default function MerchantSettings() {
 
                   <div className="flex items-center justify-between rounded-xl border p-4">
                     <div>
-                      <p className="font-semibold text-gray-800">عرض العروض الموسمية</p>
-                      <p className="text-sm text-gray-500">إظهار قسم العروض الموسمية في الصفحة</p>
+                      <p className="font-semibold text-gray-800">تفعيل المتغيرات</p>
+                      <p className="text-sm text-gray-500">السماح بإضافة متغيرات للمنتجات (الألوان، المقاسات)</p>
                     </div>
                     <Switch
-                      checked={Boolean(storeData?.storeFeatures?.showSeasonalOffers ?? true)}
+                      checked={Boolean(storeData?.storeFeatures?.enableVariants ?? true)}
                       onCheckedChange={(checked) =>
                         setStoreData((prev: any) => ({
                           ...prev,
-                          storeFeatures: { ...(prev.storeFeatures || {}), showSeasonalOffers: checked },
+                          storeFeatures: { ...(prev.storeFeatures || {}), enableVariants: checked },
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border p-4">
+                    <div>
+                      <p className="font-semibold text-gray-800">تفعيل التوصيل</p>
+                      <p className="text-sm text-gray-500">إظهار خيارات التوصيل والشحن</p>
+                    </div>
+                    <Switch
+                      checked={Boolean(storeData?.storeFeatures?.enableShipping ?? true)}
+                      onCheckedChange={(checked) =>
+                        setStoreData((prev: any) => ({
+                          ...prev,
+                          storeFeatures: { ...(prev.storeFeatures || {}), enableShipping: checked },
                         }))
                       }
                     />
