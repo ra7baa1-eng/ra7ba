@@ -299,9 +299,23 @@ export class StorefrontService {
         const itemSubtotal = price * item.quantity;
         subtotal += itemSubtotal;
 
+        // Get first image or null
+        let productImage: string | null = null;
+        if (product.images && typeof product.images === 'string') {
+          try {
+            const imgs = JSON.parse(product.images);
+            productImage = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null;
+          } catch {
+            productImage = null;
+          }
+        } else if (Array.isArray(product.images) && product.images.length > 0) {
+          productImage = product.images[0];
+        }
+
         return {
-          productName: product.name,
-          productNameAr: product.nameAr,
+          productName: product.name || '',
+          productNameAr: product.nameAr || '',
+          productImage: productImage,
           quantity: item.quantity,
           price: price,
           subtotal: itemSubtotal,
@@ -332,7 +346,11 @@ export class StorefrontService {
             commune: orderData.commune || null,
             address: orderData.address || '',
             shippingAddress: orderData.address || '',
+            postalCode: orderData.postalCode || null,
             customerNotes: orderData.notes || null,
+            deliveryCompany: null,
+            trackingNumber: null,
+            merchantNotes: null,
             subtotal,
             shippingCost: shippingFee,
             total,
