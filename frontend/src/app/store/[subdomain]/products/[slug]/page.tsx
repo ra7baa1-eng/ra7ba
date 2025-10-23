@@ -7,6 +7,16 @@ import { storefrontApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui';
 import { ArrowRight, ShoppingBag, ShoppingCart, Star, X } from 'lucide-react';
+import LocationSelector from '@/components/LocationSelector';
+
+const stripHtml = (html: string) => {
+  if (typeof window !== 'undefined') {
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+  return html.replace(/<[^>]*>/g, '');
+};
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -26,6 +36,8 @@ export default function ProductDetailPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [wilaya, setWilaya] = useState('');
   const [commune, setCommune] = useState('');
+  const [wilayaId, setWilayaId] = useState<number | null>(null);
+  const [communeId, setCommuneId] = useState<number | null>(null);
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -82,6 +94,8 @@ export default function ProductDetailPage() {
       setCustomerPhone('');
       setWilaya('');
       setCommune('');
+      setWilayaId(null);
+      setCommuneId(null);
       setAddress('');
       setNotes('');
       router.push(`/store/${subdomain}`);
@@ -93,6 +107,9 @@ export default function ProductDetailPage() {
   };
 
   const mainImage = useMemo(() => product?.images?.[0] || '', [product]);
+  const subtotal = product?.price || 0;
+  const shippingEstimate = store?.checkoutConfig?.shippingFee ?? 600;
+  const grandTotal = subtotal + shippingEstimate;
 
   if (loading) {
     return (
@@ -111,7 +128,7 @@ export default function ProductDetailPage() {
         <div className="text-center">
           <ShoppingBag className="mx-auto text-slate-300" size={48} />
           <p className="mt-3 text-slate-600">هذا المنتج غير متاح</p>
-          <Button onClick={() => router.push(`/store/${subdomain}/products/${product.slug}`)}>عودة للمتجر</Button>
+          <Button onClick={() => router.push(`/store/${subdomain}`)}>عودة للمتجر</Button>
         </div>
       </div>
     );
@@ -143,7 +160,9 @@ export default function ProductDetailPage() {
           <Card className="rounded-2xl border border-slate-100 bg-white/80 shadow">
             <CardHeader>
               <CardTitle className="text-2xl text-slate-900">{product.name}</CardTitle>
-              <CardDescription className="text-slate-600">{product.description || 'منتج مميز من تشكيلتنا'}</CardDescription>
+              <CardDescription className="text-slate-600">
+                {stripHtml(product.descriptionAr || product.description || 'منتج مميز من تشكيلتنا')}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2 text-amber-500">
@@ -179,7 +198,13 @@ export default function ProductDetailPage() {
       {showCheckout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowCheckout(false)} />
-          <div className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+          <div
+            className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl border"
+            style={{
+              boxShadow: `0 0 28px ${(store?.theme?.primaryColor || '#3B82F6')}44`,
+              borderColor: store?.theme?.primaryColor || '#3B82F6',
+            }}
+          >
             <div className="flex items-center justify-between border-b px-6 py-4">
               <h3 className="text-xl font-bold text-slate-900">إتمام الطلب</h3>
               <Button variant="ghost" onClick={() => setShowCheckout(false)} className="h-10 px-3 text-slate-500">
@@ -192,19 +217,62 @@ export default function ProductDetailPage() {
                 <Input placeholder="الاسم الكامل" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                 <Input placeholder="رقم الهاتف" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input placeholder="الولاية" value={wilaya} onChange={(e) => setWilaya(e.target.value)} />
-                <Input placeholder="البلدية" value={commune} onChange={(e) => setCommune(e.target.value)} />
-              </div>
+
+              <LocationSelector
+                selectedWilaya={wilayaId ?? undefined}
+                selectedCommune={communeId ?? undefined}
+                onWilayaChange={(id, name) => {
+                  setWilayaId(id || null);
+                  setWilaya(name || '');
+                }}
+                onCommuneChange={(id, name) => {
+                  setCommuneId(id || null);
+                  setCommune(name || '');
+                }}
+                required
+              />
+
               <Input placeholder="العنوان الكامل" value={address} onChange={(e) => setAddress(e.target.value)} />
               <Input placeholder="ملاحظات إضافية (اختياري)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+              {/* Order summary */}
+              <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600 space-y-3">
+                <div className="font-semibold text-slate-800">ملخص الطلب</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate max-w-[70%]">{product.name}</span>
+                    <span className="text-slate-500">1 × {formatCurrency(product.price)}</span>
+                  </div>
+                </div>
+                <div className="h-px bg-slate-200" />
+                <div className="flex items-center justify-between">
+                  <span>إجمالي المنتجات</span>
+                  <span className="font-bold text-slate-800">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>الشحن</span>
+                  <span className="font-semibold text-slate-700">{formatCurrency(shippingEstimate)} (تقديري)</span>
+                </div>
+                <div className="flex items-center justify-between text-base font-extrabold">
+                  <span>المجموع</span>
+                  <span className="text-primary-600">{formatCurrency(grandTotal)}</span>
+                </div>
+                <div className="text-xs text-slate-500">قد يختلف الشحن النهائي حسب منطقتك. سيتم التأكيد عبر الهاتف.</div>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 border-t px-6 py-4">
               <Button
                 className="h-11 rounded-xl px-6"
                 onClick={handleSubmitOrder}
-                disabled={checkoutSubmitting || !customerName || !customerPhone || !wilaya || !commune || !address}
+                disabled={
+                  checkoutSubmitting ||
+                  !customerName ||
+                  !customerPhone ||
+                  !wilaya ||
+                  !commune ||
+                  !address
+                }
               >
                 {checkoutSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
               </Button>

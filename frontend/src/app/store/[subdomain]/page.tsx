@@ -32,6 +32,7 @@ const stripHtml = (html: string) => {
   }
   return html.replace(/<[^>]*>/g, '');
 };
+
 import {
   Badge,
   Button,
@@ -43,18 +44,19 @@ import {
   CardTitle,
   Input,
 } from '@/components/ui';
+import LocationSelector from '@/components/LocationSelector';
 
 // Animation variants
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
       duration: 0.5,
-      ease: [0.16, 1, 0.3, 1] as [number, number, number, number]
-    } 
-  }
+      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+    },
+  },
 };
 
 const stagger: Variants = {
@@ -62,9 +64,9 @@ const stagger: Variants = {
   visible: {
     transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  }
+      delayChildren: 0.2,
+    },
+  },
 };
 
 export default function StorePage() {
@@ -80,17 +82,24 @@ export default function StorePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
   const [storeAddress, setStoreAddress] = useState('');
-  const [supportEmail, setSupportEmail] = useState('');
+  const [supportEmail] = useState('');
   const [supportPhone, setSupportPhone] = useState('');
   const [reviewsEnabled, setReviewsEnabled] = useState(true);
   const [offersEnabled, setOffersEnabled] = useState(true);
   const [enableCart, setEnableCart] = useState(true);
+
+  // One-click checkout (when cart disabled)
   const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+
+  // Location
   const [wilaya, setWilaya] = useState('');
   const [commune, setCommune] = useState('');
+  const [wilayaId, setWilayaId] = useState<number | null>(null);
+  const [communeId, setCommuneId] = useState<number | null>(null);
+
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -101,7 +110,7 @@ export default function StorePage() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
-    // ابقِ ميزات الواجهة من localStorage كاحتياط فقط
+    // Keep some UI feature flags optionally from localStorage
     try {
       const features = localStorage.getItem('ra7ba:settings:features');
       if (features) {
@@ -138,7 +147,7 @@ export default function StorePage() {
       const response = await storefrontApi.getStore(subdomain);
       const store = response.data;
       setStoreInfo(store);
-      setStoreDescription(store.descriptionAr || store.description || '');
+      setStoreDescription(stripHtml(store.descriptionAr || store.description || ''));
       setStoreAddress(store.address || '');
       setSupportPhone(store.phone || '');
       if (store.storeFeatures) {
@@ -154,7 +163,6 @@ export default function StorePage() {
   const addToCart = (product: any) => {
     const existingItem = cart.find((item) => item.id === product.id);
     let newCart;
-
     if (existingItem) {
       newCart = cart.map((item) =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
@@ -162,7 +170,6 @@ export default function StorePage() {
     } else {
       newCart = [...cart, { ...product, quantity: 1 }];
     }
-
     setCart(newCart);
     localStorage.setItem('cart', JSON.stringify(newCart));
   };
@@ -178,7 +185,6 @@ export default function StorePage() {
       removeFromCart(productId);
       return;
     }
-
     const newCart = cart.map((item) =>
       item.id === productId ? { ...item, quantity } : item
     );
@@ -192,29 +198,21 @@ export default function StorePage() {
   const categories = useMemo(() => {
     const unique = new Set<string>();
     products.forEach((product) => {
-      if (product.category) {
-        unique.add(product.category);
-      }
+      if (product.category) unique.add(product.category);
     });
     return ['all', ...Array.from(unique)];
   }, [products]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchesCategory =
-        selectedCategory === 'all' || product.category === selectedCategory;
-      const matchesSearch = product.name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [products, selectedCategory, searchTerm]);
 
   const heroProduct = useMemo(() => filteredProducts[0], [filteredProducts]);
-  const spotlightProducts = useMemo(
-    () => filteredProducts.slice(0, 6),
-    [filteredProducts]
-  );
+  const spotlightProducts = useMemo(() => filteredProducts.slice(0, 6), [filteredProducts]);
 
   const handleSubmitOrder = async () => {
     try {
@@ -228,14 +226,15 @@ export default function StorePage() {
       const payload = {
         customerName,
         customerPhone,
-        wilaya,
-        commune,
+        wilaya,  // Arabic wilaya name
+        commune, // Arabic commune name
         address,
         items: itemsSrc.map((it: any) => ({ productId: it.id, quantity: it.quantity || 1 })),
         notes,
       };
       await storefrontApi.createOrder(subdomain, payload);
-      // Clear cart after success
+
+      // Clear cart after success if used
       if (enableCart) {
         setCart([]);
         localStorage.removeItem('cart');
@@ -245,6 +244,8 @@ export default function StorePage() {
       setCustomerPhone('');
       setWilaya('');
       setCommune('');
+      setWilayaId(null);
+      setCommuneId(null);
       setAddress('');
       setNotes('');
       setCheckoutItems([]);
@@ -267,23 +268,33 @@ export default function StorePage() {
     );
   }
 
+  const itemsSrc = enableCart ? cart : checkoutItems;
+  const subtotal = itemsSrc.reduce((s, it) => s + it.price * (it.quantity || 1), 0);
+  const shippingEstimate = storeInfo?.checkoutConfig?.shippingFee ?? 600;
+  const grandTotal = subtotal + shippingEstimate;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-white">
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-sky-100">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 shadow-[0_0_20px_rgba(59,130,246,0.35)]">
+              <div
+                className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-lg"
+                style={{
+                  boxShadow: `0 0 22px ${(storeInfo?.theme?.primaryColor || '#3B82F6')}55`,
+                }}
+              >
                 {storeInfo?.logo ? (
                   <Image src={storeInfo.logo} alt="Store logo" fill className="object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white">
+                  <div className="w-full h-full flex items-center justify-center text-white bg-gradient-to-br from-primary-500 to-primary-700">
                     <ShoppingBag size={24} />
                   </div>
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-2xl font-black text-slate-900 mb-0.5">
                   {storeInfo?.name || 'متجر رحبة'}
                 </h1>
                 <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -314,6 +325,7 @@ export default function StorePage() {
               )}
             </div>
           </div>
+
           {/* تنقّل صفحات المتجر */}
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
             <a href="#top" className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:text-primary-600 hover:border-primary-200">الرئيسية</a>
@@ -530,23 +542,6 @@ export default function StorePage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'secondary'}
-                className={`h-10 rounded-full border px-5 text-sm font-semibold transition ${
-                  selectedCategory === category
-                    ? 'border-transparent bg-primary-600 text-white shadow'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-primary-200 hover:text-primary-600'
-                }`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category === 'all' ? 'كل المنتجات' : category}
-              </Button>
-            ))}
-          </div>
-
           <motion.div
             variants={stagger}
             initial="hidden"
@@ -644,75 +639,12 @@ export default function StorePage() {
             )}
           </motion.div>
         </section>
-
-        {(reviewsEnabled || offersEnabled) && (
-          <section className="grid gap-6 rounded-3xl bg-white/70 p-8 shadow-lg lg:grid-cols-3">
-            {reviewsEnabled && (
-              <div className="lg:col-span-2 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-bold text-slate-900">آراء عملائنا</h3>
-                  <Badge className="bg-emerald-50 text-emerald-600">رضا 98%</Badge>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {['مريم', 'أمين', 'خولة', 'سامي'].map((customer) => (
-                    <Card key={customer} className="rounded-2xl border border-slate-100 bg-white/80 p-5 shadow-sm">
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold text-slate-800">{customer}</p>
-                            <p className="text-xs text-slate-400">عميل رحبة</p>
-                          </div>
-                          <div className="flex items-center gap-1 text-amber-400">
-                            {[...Array(5)].map((_, index) => (
-                              <Star key={index} size={16} fill="currentColor" />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-sm leading-relaxed text-slate-500">
-                          تجربة مميزة جداً! المنتجات وصلت بسرعة وبجودة ممتازة. خدمة العملاء كانت متجاوبة وودودة.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-            {offersEnabled && (
-              <Card className="h-full rounded-2xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-white p-6 shadow-md">
-                <CardHeader>
-                  <Badge className="bg-primary-600 text-white">عروض الموسم</Badge>
-                  <CardTitle className="text-2xl text-slate-900">عروض حصرية</CardTitle>
-                  <CardDescription className="text-slate-500">
-                    استفد من خصومات تصل إلى 35% على باقات المنتجات المختارة لمدة محدودة.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary-500" />
-                    منتجات أصلية مع ضمان شامل
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-primary-500" />
-                    توصيل مجاني للطلبات فوق 10,000 دج
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-primary-500" />
-                    خدمة ما بعد البيع ممتازة
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="h-11 w-full rounded-xl">اكتشف الخصومات الآن</Button>
-                </CardFooter>
-              </Card>
-            )}
-          </section>
-        )}
       </main>
 
       <AnimatePresence>
         {showCart && (
           <>
-            <div 
+            <div
               className="fixed inset-0 bg-black/50 z-40"
               onClick={() => setShowCart(false)}
             />
@@ -755,14 +687,14 @@ export default function StorePage() {
                               <Image
                                 src={item.images[0]}
                                 alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-slate-300">
-                              <ShoppingBag size={28} />
-                            </div>
-                          )}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                <ShoppingBag size={28} />
+                              </div>
+                            )}
                           </div>
                           <div className="min-w-0 flex-1 space-y-1">
                             <h4 className="truncate text-base font-semibold text-slate-900">
@@ -844,7 +776,13 @@ export default function StorePage() {
               exit={{ opacity: 0, y: 20 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
-              <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+              <div
+                className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border"
+                style={{
+                  boxShadow: `0 0 28px ${(storeInfo?.theme?.primaryColor || '#3B82F6')}44`,
+                  borderColor: storeInfo?.theme?.primaryColor || '#3B82F6',
+                }}
+              >
                 <div className="flex items-center justify-between border-b px-6 py-4">
                   <h3 className="text-xl font-bold text-slate-900">إتمام الطلب</h3>
                   <Button variant="ghost" onClick={() => setShowCheckout(false)} className="h-10 px-3 text-slate-500">
@@ -857,19 +795,51 @@ export default function StorePage() {
                     <Input placeholder="الاسم الكامل" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                     <Input placeholder="رقم الهاتف" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input placeholder="الولاية" value={wilaya} onChange={(e) => setWilaya(e.target.value)} />
-                    <Input placeholder="البلدية" value={commune} onChange={(e) => setCommune(e.target.value)} />
-                  </div>
+
+                  <LocationSelector
+                    selectedWilaya={wilayaId ?? undefined}
+                    selectedCommune={communeId ?? undefined}
+                    onWilayaChange={(id, name) => {
+                      setWilayaId(id || null);
+                      setWilaya(name || '');
+                    }}
+                    onCommuneChange={(id, name) => {
+                      setCommuneId(id || null);
+                      setCommune(name || '');
+                    }}
+                    required
+                  />
+
                   <Input placeholder="العنوان الكامل" value={address} onChange={(e) => setAddress(e.target.value)} />
                   <Input placeholder="ملاحظات إضافية (اختياري)" value={notes} onChange={(e) => setNotes(e.target.value)} />
 
-                  <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
+                  {/* Order summary */}
+                  <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600 space-y-3">
+                    <div className="font-semibold text-slate-800">ملخص الطلب</div>
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                      {itemsSrc.map((it) => (
+                        <div key={it.id} className="flex items-center justify-between">
+                          <span className="truncate max-w-[70%]">{it.name}</span>
+                          <span className="text-slate-500">
+                            {it.quantity || 1} × {formatCurrency(it.price)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-px bg-slate-200" />
                     <div className="flex items-center justify-between">
                       <span>إجمالي المنتجات</span>
-                      <span className="font-bold text-primary-600">{formatCurrency((enableCart ? cart : checkoutItems).reduce((s, it) => s + it.price * (it.quantity || 1), 0))}</span>
+                      <span className="font-bold text-slate-800">{formatCurrency(subtotal)}</span>
                     </div>
-                    <div className="mt-2 text-slate-500">سيتم احتساب الشحن عند التأكيد.</div>
+                    <div className="flex items-center justify-between">
+                      <span>الشحن</span>
+                      <span className="font-semibold text-slate-700">{formatCurrency(shippingEstimate)} (تقديري)</span>
+                    </div>
+                    <div className="flex items-center justify-between text-base font-extrabold">
+                      <span>المجموع</span>
+                      <span className="text-primary-600">{formatCurrency(grandTotal)}</span>
+                    </div>
+                    <div className="text-xs text-slate-500">قد يختلف الشحن النهائي حسب منطقتك. سيتم التأكيد عبر الهاتف.</div>
                   </div>
                 </div>
 
@@ -877,7 +847,15 @@ export default function StorePage() {
                   <Button
                     className="h-11 rounded-xl px-6"
                     onClick={handleSubmitOrder}
-                    disabled={checkoutSubmitting || !customerName || !customerPhone || !wilaya || !commune || !address}
+                    disabled={
+                      checkoutSubmitting ||
+                      !customerName ||
+                      !customerPhone ||
+                      !wilaya ||
+                      !commune ||
+                      !address ||
+                      itemsSrc.length === 0
+                    }
                   >
                     {checkoutSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
                   </Button>
