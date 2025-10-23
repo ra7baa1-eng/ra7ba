@@ -1,10 +1,11 @@
 'use client';
 
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardTopbar } from '@/components/dashboard/topbar';
+import { merchantApi } from '@/lib/api';
 
 interface Props {
   children: ReactNode;
@@ -15,21 +16,35 @@ export default function MerchantShell({ children }: Props) {
   const { user, loading } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const statsSnapshot = useMemo(() => {
-    const stats = user?.tenant?.stats as {
-      ordersCount?: number;
-      productsCount?: number;
-      totalSales?: number;
-    } | undefined;
+  const [statsSnapshot, setStatsSnapshot] = useState<
+    | {
+        totalOrders?: number;
+        totalProducts?: number;
+        totalRevenue?: number;
+      }
+    | undefined
+  >(undefined);
 
-    if (!stats) return undefined;
-
-    return {
-      totalOrders: stats.ordersCount,
-      totalProducts: stats.productsCount,
-      totalRevenue: stats.totalSales,
+  useEffect(() => {
+    let cancelled = false;
+    const loadStats = async () => {
+      try {
+        if (user?.role !== 'MERCHANT') return;
+        const res = await merchantApi.getStats();
+        const d: any = res?.data || {};
+        const snapshot = {
+          totalOrders: d.ordersCount ?? d.totalOrders ?? d.orders,
+          totalProducts: d.productsCount ?? d.totalProducts ?? d.products,
+          totalRevenue: d.totalSales ?? d.revenue,
+        };
+        if (!cancelled) setStatsSnapshot(snapshot);
+      } catch (_) {}
     };
-  }, [user?.tenant?.stats]);
+    loadStats();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role]);
 
   useEffect(() => {
     if (loading) return;
