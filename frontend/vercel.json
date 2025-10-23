@@ -4,10 +4,5 @@
       "maxDuration": 60
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://allied-ginnifer-ra7baa-76e2af81.koyeb.app/api/:path*"
-    }
-  ]
+  "rewrites": []
 }

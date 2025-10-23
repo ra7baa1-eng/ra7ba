@@ -3,7 +3,7 @@ export async function uploadImageToImgBB(file: File, folder: string = 'products'
   const formData = new FormData();
   formData.append('file', file);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   const url = `${baseUrl}/storage/upload?folder=${encodeURIComponent(folder)}`;
 
   // Attach Bearer token from localStorage if present
