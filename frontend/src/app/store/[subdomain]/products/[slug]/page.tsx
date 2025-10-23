@@ -107,9 +107,9 @@ export default function ProductDetailPage() {
   };
 
   const mainImage = useMemo(() => product?.images?.[0] || '', [product]);
-  const subtotal = product?.price || 0;
-  const shippingEstimate = store?.checkoutConfig?.shippingFee ?? 600;
-  const grandTotal = subtotal + shippingEstimate;
+  const subtotal = Number(product?.price || 0);
+  const shippingEstimate = Number(store?.checkoutConfig?.shippingFee ?? 600);
+  const grandTotal = Number(subtotal) + Number(shippingEstimate);
 
   if (loading) {
     return (

@@ -269,9 +269,9 @@ export default function StorePage() {
   }
 
   const itemsSrc = enableCart ? cart : checkoutItems;
-  const subtotal = itemsSrc.reduce((s, it) => s + it.price * (it.quantity || 1), 0);
-  const shippingEstimate = storeInfo?.checkoutConfig?.shippingFee ?? 600;
-  const grandTotal = subtotal + shippingEstimate;
+  const subtotal = itemsSrc.reduce((s, it) => s + (Number(it.price) * (it.quantity || 1)), 0);
+  const shippingEstimate = Number(storeInfo?.checkoutConfig?.shippingFee ?? 600);
+  const grandTotal = Number(subtotal) + Number(shippingEstimate);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-white">
