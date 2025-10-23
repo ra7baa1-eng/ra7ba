@@ -10,10 +10,7 @@ import {
 } from 'lucide-react';
 import { storefrontApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button, Input, Badge } from '@/components/ui';
 import { useCart } from '@/hooks/use-cart';
 
 const ProductPage = () => {
@@ -343,27 +340,25 @@ const ProductPage = () => {
         </div>
       </section>
 
-      {/* Product Details Tabs */}
+      {/* Product Details */}
       <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
-              <TabsTrigger value="description">الوصف</TabsTrigger>
-              <TabsTrigger value="specs">المواصفات</TabsTrigger>
-              <TabsTrigger value="reviews">التقييمات (24)</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="description" className="max-w-3xl mx-auto">
-              <div
-                className="prose prose-sm sm:prose dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ 
-                  __html: product.description || 'لا يوجد وصف متوفر' 
-                }}
-              />
-            </TabsContent>
-            
-            <TabsContent value="specs" className="max-w-3xl mx-auto">
-              <div className="space-y-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="space-y-8">
+              {/* Description */}
+              <div>
+                <h3 className="text-xl font-bold mb-4">الوصف</h3>
+                <div
+                  className="prose prose-sm sm:prose dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: product.description || 'لا يوجد وصف متوفر'
+                  }}
+                />
+              </div>
+
+              {/* Specifications */}
+              <div>
+                <h3 className="text-xl font-bold mb-4">المواصفات</h3>
                 {product.specifications?.length > 0 ? (
                   <div className="space-y-2">
                     {product.specifications.map((spec: any, i: number) => (
@@ -381,83 +376,52 @@ const ProductPage = () => {
                   </p>
                 )}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="max-w-3xl mx-auto">
-              <div className="space-y-6">
-                {/* Review Summary */}
-                <div className="bg-background p-6 rounded-lg border">
-                  <h3 className="text-lg font-medium mb-4">تقييم العملاء</h3>
-                  <div className="flex flex-col sm:flex-row items-center gap-8">
-                    <div className="text-center">
-                      <div className="text-5xl font-bold mb-2">4.8</div>
-                      <div className="flex justify-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-5 h-5 ${
-                              i < 5 ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
-                            }`}
-                          />
+
+              {/* Reviews */}
+              <div>
+                <h3 className="text-xl font-bold mb-4">التقييمات (24)</h3>
+                <div className="space-y-6">
+                  <div className="bg-background p-6 rounded-lg border">
+                    <h4 className="text-lg font-medium mb-4">تقييم العملاء</h4>
+                    <div className="flex flex-col sm:flex-row items-center gap-8">
+                      <div className="text-center">
+                        <div className="text-5xl font-bold mb-2">4.8</div>
+                        <div className="flex justify-center mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < 5 ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          بناءً على 24 تقييم
+                        </p>
+                      </div>
+                      <div className="flex-1 w-full space-y-2">
+                        {[5, 4, 3, 2, 1].map((stars) => (
+                          <div key={stars} className="flex items-center gap-2">
+                            <span className="w-8 text-sm">{stars}</span>
+                            <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-yellow-400"
+                                style={{ width: `${(stars / 5) * 100}%` }}
+                              />
+                            </div>
+                            <span className="w-8 text-sm text-muted-foreground">
+                              {Math.floor(24 * (stars / 5))}
+                            </span>
+                          </div>
                         ))}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        بناءً على 24 تقييم
-                      </p>
-                    </div>
-                    <div className="flex-1 w-full space-y-2">
-                      {[5, 4, 3, 2, 1].map((stars) => (
-                        <div key={stars} className="flex items-center gap-2">
-                          <span className="w-8 text-sm">{stars}</span>
-                          <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-yellow-400"
-                              style={{ width: `${(stars / 5) * 100}%` }}
-                            />
-                          </div>
-                          <span className="w-8 text-sm text-muted-foreground">
-                            {Math.floor(24 * (stars / 5))}
-                          </span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
-
-                {/* Reviews List */}
-                <div className="space-y-6">
-                  {[1, 2].map((review) => (
-                    <div
-                      key={review}
-                      className="bg-background p-6 rounded-lg border"
-                    >
-                      <div className="flex justify-between mb-2">
-                        <div>
-                          <h4 className="font-medium">محمد أحمد</h4>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < 5 ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          منذ 3 أيام
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground">
-                        منتج رائع وجودة عالية، أنصح به بشدة
-                      </p>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
       </section>
 
