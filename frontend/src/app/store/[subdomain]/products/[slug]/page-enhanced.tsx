@@ -630,8 +630,8 @@ export default function ProductPage() {
                   />
                   
                   <LocationSelector
-                    selectedWilaya={wilayaId}
-                    selectedCommune={communeId}
+                    selectedWilaya={wilayaId ?? undefined}
+                    selectedCommune={communeId ?? undefined}
                     onWilayaChange={(id, name) => {
                       setWilayaId(id);
                       setWilaya(name);
