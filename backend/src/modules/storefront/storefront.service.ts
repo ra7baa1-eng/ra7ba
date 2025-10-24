@@ -301,15 +301,17 @@ export class StorefrontService {
 
         // Get first image or null
         let productImage: string | null = null;
-        if (product.images && typeof product.images === 'string') {
+        if (product.images) {
           try {
-            const imgs = JSON.parse(product.images);
-            productImage = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null;
+            const imgs = typeof product.images === 'string' 
+              ? JSON.parse(product.images) 
+              : product.images;
+            if (Array.isArray(imgs) && imgs.length > 0 && typeof imgs[0] === 'string') {
+              productImage = imgs[0];
+            }
           } catch {
             productImage = null;
           }
-        } else if (Array.isArray(product.images) && product.images.length > 0) {
-          productImage = product.images[0];
         }
 
         return {
@@ -346,7 +348,7 @@ export class StorefrontService {
             commune: orderData.commune || null,
             address: orderData.address || '',
             shippingAddress: orderData.address || '',
-            postalCode: orderData.postalCode || null,
+            postalCode: null,
             customerNotes: orderData.notes || null,
             deliveryCompany: null,
             trackingNumber: null,
