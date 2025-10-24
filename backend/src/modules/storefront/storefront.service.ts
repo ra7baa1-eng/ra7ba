@@ -335,29 +335,29 @@ export class StorefrontService {
 
       // Use transaction for atomicity and parallel updates for speed
       const order = await this.prisma.$transaction(async (tx) => {
-        // Create order
+        // Create order with minimal required fields
         const newOrder = await tx.order.create({
           data: {
             orderNumber,
             tenantId: tenant.id,
-            customerName: orderData.customerName,
-            customerPhone: orderData.customerPhone,
-            customerEmail: orderData.customerEmail || null,
-            wilaya: orderData.wilaya || '',
-            daira: orderData.daira || null,
-            commune: orderData.commune || null,
-            address: orderData.address || '',
-            shippingAddress: orderData.address || '',
-            postalCode: null,
-            customerNotes: orderData.notes || null,
-            trackingNumber: null,
-            merchantNotes: null,
+            customerName: orderData.customerName || 'عميل',
+            customerPhone: orderData.customerPhone || '',
+            wilaya: orderData.wilaya || 'الجزائر',
+            address: orderData.address || 'العنوان',
+            shippingAddress: orderData.address || 'العنوان',
             subtotal,
             shippingCost: shippingFee,
             total,
-            status: 'PENDING',
             items: {
-              create: orderItems,
+              create: orderItems.map(item => ({
+                productName: item.productName,
+                productNameAr: item.productNameAr,
+                productImage: item.productImage,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.subtotal,
+                productId: item.product.connect.id,
+              })),
             },
           },
           include: {
