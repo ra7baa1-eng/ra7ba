@@ -8,13 +8,27 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     let finalUrl = raw;
     try {
       const u = new URL(raw);
-      const forceDirect = String(process.env.DB_FORCE_DIRECT ?? 'true').toLowerCase() === 'true';
+      const forceDirect = String(process.env.DB_FORCE_DIRECT ?? 'false').toLowerCase() === 'true';
       if (forceDirect) {
+        // Force direct connection (standard Postgres on 5432)
         u.port = '5432';
         u.searchParams.delete('pgbouncer');
         u.searchParams.delete('connection_limit');
         u.searchParams.set('sslmode', 'require');
         finalUrl = u.toString();
+      } else {
+        // If using Supabase pooler host, ensure correct port and params
+        if (u.hostname.includes('pooler.supabase.com')) {
+          if (!u.port || u.port === '5432') {
+            u.port = '6543';
+          }
+          u.searchParams.set('pgbouncer', 'true');
+          u.searchParams.set('connection_limit', '1');
+          if (!u.searchParams.get('sslmode')) {
+            u.searchParams.set('sslmode', 'require');
+          }
+          finalUrl = u.toString();
+        }
       }
     } catch (_) {}
 
