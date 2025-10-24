@@ -302,7 +302,7 @@ export default function ProductPage() {
             {/* Title & Category */}
             <div>
               {product.category && (
-                <Badge variant="secondary" className="mb-2">
+                <Badge variant="outline" className="mb-2">
                   {product.category.nameAr || product.category.name}
                 </Badge>
               )}
