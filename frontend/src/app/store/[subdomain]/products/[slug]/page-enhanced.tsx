@@ -10,11 +10,8 @@ import {
   Award, CheckCircle, AlertCircle, Sparkles, Gift,
   TrendingUp, Users, Eye, ShoppingBag, Minus, Plus
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { LocationSelector } from '@/components/LocationSelector';
+import { Button, Badge, Card, Input } from '@/components/ui';
+import LocationSelector from '@/components/LocationSelector';
 import { storefrontApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
