@@ -350,7 +350,6 @@ export class StorefrontService {
             shippingAddress: orderData.address || '',
             postalCode: null,
             customerNotes: orderData.notes || null,
-            deliveryCompany: null,
             trackingNumber: null,
             merchantNotes: null,
             subtotal,
